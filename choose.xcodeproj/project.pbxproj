@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		94CB5DA41ABA1799009270CC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CB5DA31ABA1799009270CC /* main.swift */; };
+		949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949BAE3C1ABDCEF300C47FDA /* Color.swift */; };
+		94CB5DAB1ABA1815009270CC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CB5DAA1ABA1815009270CC /* main.swift */; };
+		94CE3E221ABD022200796385 /* CommandLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CE3E211ABD022200796385 /* CommandLine.swift */; };
+		94CE3E241ABD053700796385 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CE3E231ABD053700796385 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,8 +26,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		949BAE3C1ABDCEF300C47FDA /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
 		94CB5DA01ABA1799009270CC /* choose */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = choose; sourceTree = BUILT_PRODUCTS_DIR; };
-		94CB5DA31ABA1799009270CC /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		94CB5DAA1ABA1815009270CC /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		94CB5DAC1ABA1828009270CC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		94CE3E211ABD022200796385 /* CommandLine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandLine.swift; sourceTree = "<group>"; };
+		94CE3E231ABD053700796385 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,7 +48,11 @@
 		94CB5D971ABA1799009270CC = {
 			isa = PBXGroup;
 			children = (
-				94CB5DA21ABA1799009270CC /* choose */,
+				94CB5DAA1ABA1815009270CC /* main.swift */,
+				94CE3E231ABD053700796385 /* AppDelegate.swift */,
+				94CE3E211ABD022200796385 /* CommandLine.swift */,
+				949BAE3C1ABDCEF300C47FDA /* Color.swift */,
+				94CB5DAC1ABA1828009270CC /* Info.plist */,
 				94CB5DA11ABA1799009270CC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -52,14 +63,6 @@
 				94CB5DA01ABA1799009270CC /* choose */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		94CB5DA21ABA1799009270CC /* choose */ = {
-			isa = PBXGroup;
-			children = (
-				94CB5DA31ABA1799009270CC /* main.swift */,
-			);
-			path = choose;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -118,7 +121,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94CB5DA41ABA1799009270CC /* main.swift in Sources */,
+				94CE3E241ABD053700796385 /* AppDelegate.swift in Sources */,
+				949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */,
+				94CB5DAB1ABA1815009270CC /* main.swift in Sources */,
+				94CE3E221ABD022200796385 /* CommandLine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -203,13 +209,30 @@
 		94CB5DA81ABA1799009270CC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				OTHER_LDFLAGS = (
+					"-sectcreate",
+					__TEXT,
+					__info_plist,
+					"$(SRCROOT)/Info.plist",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		94CB5DA91ABA1799009270CC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				OTHER_LDFLAGS = (
+					"-sectcreate",
+					__TEXT,
+					__info_plist,
+					"$(SRCROOT)/Info.plist",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -233,6 +256,7 @@
 				94CB5DA91ABA1799009270CC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
