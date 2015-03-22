@@ -26,7 +26,7 @@ CommandLine.parse(
         "v": .V({ showVersion() }),
         "h": .Usage,
     ],
-    done: {
+    done: { args in
         app.setActivationPolicy(.Accessory)
         app.delegate = AppDelegate()
         NSApplicationMain(C_ARGC, C_ARGV)
