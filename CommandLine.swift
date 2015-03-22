@@ -18,8 +18,12 @@ private struct FlexGenerator<T> {
         }
     }
     
-    mutating func ohWaitGoBack() {
+    mutating func ohWaitGoBackOne() {
         index--
+    }
+    
+    var remainder: [T] {
+        return Array(elements[index..<elements.count])
     }
     
 }
@@ -43,36 +47,43 @@ class CommandLine {
             case Gap: return "<gap>"
             }
         }
-    }
-    
-    class func parse(#usage: String -> String, flags: [Character:Flag], done: [String] -> ()) {
-        let rawargs = (0..<Int(C_ARGC)).map{ String(UTF8String: C_ARGV[$0])! }
-        let program = rawargs.first!
-//        let args = Array(dropFirst(rawargs))
-        let args = ["-if", "foo", "bar"]
         
-        let charArrays = args.map{Array($0)}
-        let tokenArrays: [[Token]] = charArrays.map{$0.map{.Char($0)}}
-        
-        var tokens = FlexGenerator([.Gap].join(tokenArrays))
-        var state: State = .Ready
-        
-        let showUsage: () -> () = {
-            println(usage(program))
-            exit(0)
-        }
-        
-        func handle(flag: Flag, value: String) {
-            switch flag {
-            case let .V(fn): fn()
-            case let .S(fn): fn(value)
-            case let .I(fn): fn((value as NSString).integerValue)
-            case let .D(fn): fn((value as NSString).doubleValue)
-            case .Usage: showUsage()
+        func isGap() -> Bool {
+            switch self {
+            case Gap: return true
+            default: return false
             }
         }
-        
-        Loop: while true {
+    }
+    
+    private let usage: String
+    private var tokens: FlexGenerator<Token>
+    private let flags: [Character:Flag]
+    private var state: State = .Ready
+    
+    private init(usage: String, tokens: FlexGenerator<Token>, flags: [Character:Flag]) {
+        self.usage = usage
+        self.tokens = tokens
+        self.flags = flags
+    }
+    
+    private func showUsage() {
+        println(usage)
+        exit(0)
+    }
+    
+    private func handle(flag: Flag, _ value: String) {
+        switch flag {
+        case let .V(fn): fn()
+        case let .S(fn): fn(value)
+        case let .I(fn): fn((value as NSString).integerValue)
+        case let .D(fn): fn((value as NSString).doubleValue)
+        case .Usage: showUsage()
+        }
+    }
+    
+    private func parse() {
+        while true {
             let c = tokens.next()
             
             switch state {
@@ -80,15 +91,15 @@ class CommandLine {
                 switch c {
                 case .None:
                     // we hit the end!
-                    break Loop
+                    return
                 case .Some(.Char("-")):
                     state = .Flag
                 case .Some(.Gap):
                     // ok, we're done; the rest are arguments
-                    break
+                    return
                 default:
                     // ok, we're done; this begins the arguments
-                    break
+                    return
                 }
             case .Flag:
                 switch c {
@@ -127,7 +138,7 @@ class CommandLine {
                         // it's another flag!!! handle it!
                     }
                     else {
-                        tokens.ohWaitGoBack()
+                        tokens.ohWaitGoBackOne()
                     }
                     break
                 default:
@@ -136,6 +147,28 @@ class CommandLine {
                 }
             }
         }
+    }
+    
+    class func parse(#usage: String -> String, flags: [Character:Flag], done: [String] -> ()) {
+        let rawargs = (0..<Int(C_ARGC)).map{ String(UTF8String: C_ARGV[$0])! }
+        let program = rawargs.first!
+//        let args = Array(dropFirst(rawargs))
+        let args = ["-if", "foo", "bar", "quux arg with spaces"]
+        
+        let charArrays = args.map{Array($0)}
+        let tokenArrays: [[Token]] = charArrays.map{$0.map{.Char($0)}}
+        
+        var tokens = FlexGenerator([.Gap].join(tokenArrays))
+        
+        let cli = CommandLine(usage: usage(program), tokens: tokens, flags: flags)
+        cli.parse()
+        
+        let bla = Token.isGap
+        
+        let splits = split(cli.tokens.remainder, Token.isGap, maxSplit: 0, allowEmptySlices: true)
+        
+        
+        
     }
     
     enum Flag {
