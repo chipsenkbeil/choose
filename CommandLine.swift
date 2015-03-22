@@ -165,7 +165,7 @@ class CommandLine {
         
         let bla = Token.isGap
         
-        let splits = split(cli.tokens.remainder, Token.isGap, maxSplit: 0, allowEmptySlices: true)
+//        let splits = split(cli.tokens.remainder, Token.isGap, maxSplit: 0, allowEmptySlices: true)
         
         
         

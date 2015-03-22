@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		947818F01ABF71F70028F962 /* Subclasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947818EF1ABF71F70028F962 /* Subclasses.swift */; };
+		947818F21ABF72FC0028F962 /* Choice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947818F11ABF72FC0028F962 /* Choice.swift */; };
+		948773651ABF76C4008EA365 /* StandardFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948773641ABF76C4008EA365 /* StandardFiles.swift */; };
 		949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949BAE3C1ABDCEF300C47FDA /* Color.swift */; };
 		94CB5DAB1ABA1815009270CC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CB5DAA1ABA1815009270CC /* main.swift */; };
 		94CE3E221ABD022200796385 /* CommandLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CE3E211ABD022200796385 /* CommandLine.swift */; };
@@ -26,6 +29,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		947818EF1ABF71F70028F962 /* Subclasses.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Subclasses.swift; sourceTree = "<group>"; };
+		947818F11ABF72FC0028F962 /* Choice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Choice.swift; sourceTree = "<group>"; };
+		948773641ABF76C4008EA365 /* StandardFiles.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StandardFiles.swift; sourceTree = "<group>"; };
 		949BAE3C1ABDCEF300C47FDA /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
 		94CB5DA01ABA1799009270CC /* choose */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = choose; sourceTree = BUILT_PRODUCTS_DIR; };
 		94CB5DAA1ABA1815009270CC /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -52,6 +58,9 @@
 				94CE3E231ABD053700796385 /* AppDelegate.swift */,
 				94CE3E211ABD022200796385 /* CommandLine.swift */,
 				949BAE3C1ABDCEF300C47FDA /* Color.swift */,
+				947818EF1ABF71F70028F962 /* Subclasses.swift */,
+				948773641ABF76C4008EA365 /* StandardFiles.swift */,
+				947818F11ABF72FC0028F962 /* Choice.swift */,
 				94CB5DAC1ABA1828009270CC /* Info.plist */,
 				94CB5DA11ABA1799009270CC /* Products */,
 			);
@@ -121,8 +130,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				947818F21ABF72FC0028F962 /* Choice.swift in Sources */,
 				94CE3E241ABD053700796385 /* AppDelegate.swift in Sources */,
+				947818F01ABF71F70028F962 /* Subclasses.swift in Sources */,
 				949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */,
+				948773651ABF76C4008EA365 /* StandardFiles.swift in Sources */,
 				94CB5DAB1ABA1815009270CC /* main.swift in Sources */,
 				94CE3E221ABD022200796385 /* CommandLine.swift in Sources */,
 			);
