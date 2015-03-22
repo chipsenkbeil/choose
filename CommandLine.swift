@@ -1,11 +1,36 @@
 import Foundation
 
+private struct FlexGenerator<T> {
+    
+    let elements: [T]
+    var index = 0
+    
+    init(_ e: [T]) {
+        elements = e
+    }
+    
+    mutating func next() -> T? {
+        if index == elements.endIndex {
+            return nil
+        }
+        else {
+            return elements[index++]
+        }
+    }
+    
+    mutating func ohWaitGoBack() {
+        index--
+    }
+    
+}
+
 class CommandLine {
     
     private enum State {
-        case Anything
+        case Ready
         case Flag
         case Arg
+        case FinishedSoleFlag
     }
     
     private enum Token: Printable {
@@ -20,7 +45,7 @@ class CommandLine {
         }
     }
     
-    class func parse(#usage: String -> String, flags: [String:Flag], done: [String] -> ()) {
+    class func parse(#usage: String -> String, flags: [Character:Flag], done: [String] -> ()) {
         let rawargs = (0..<Int(C_ARGC)).map{ String(UTF8String: C_ARGV[$0])! }
         let program = rawargs.first!
 //        let args = Array(dropFirst(rawargs))
@@ -29,14 +54,29 @@ class CommandLine {
         let charArrays = args.map{Array($0)}
         let tokenArrays: [[Token]] = charArrays.map{$0.map{.Char($0)}}
         
-        var tokens = [.Gap].join(tokenArrays).generate()
-        var state: State = .Anything
+        var tokens = FlexGenerator([.Gap].join(tokenArrays))
+        var state: State = .Ready
+        
+        let showUsage: () -> () = {
+            println(usage(program))
+            exit(0)
+        }
+        
+        func handle(flag: Flag, value: String) {
+            switch flag {
+            case let .V(fn): fn()
+            case let .S(fn): fn(value)
+            case let .I(fn): fn((value as NSString).integerValue)
+            case let .D(fn): fn((value as NSString).doubleValue)
+            case .Usage: showUsage()
+            }
+        }
         
         Loop: while true {
             let c = tokens.next()
             
             switch state {
-            case .Anything:
+            case .Ready:
                 switch c {
                 case .None:
                     // we hit the end!
@@ -55,6 +95,22 @@ class CommandLine {
                 case .None:
                     // this is an error! i think?
                     break
+                case let .Some(.Char(x)):
+                    if let flag = flags[x] {
+                        if flag.needsArg() {
+                            state = .Arg
+                            // needs arg; store handler and call it later when you have one.
+                        }
+                        else {
+                            handle(flag, "")
+                            state = .FinishedSoleFlag
+                            // doesn't need arg; call immediately and be done with this flag
+                        }
+                    }
+                    else {
+                        // error: didn't find match!
+                        showUsage()
+                    }
                 default:
                     break
                 }
@@ -64,20 +120,22 @@ class CommandLine {
             case .Arg:
                 // uhh
                 break
+            case .FinishedSoleFlag:
+                switch c {
+                case let .Some(.Char(x)):
+                    if let flag = flags[x] {
+                        // it's another flag!!! handle it!
+                    }
+                    else {
+                        tokens.ohWaitGoBack()
+                    }
+                    break
+                default:
+                    // uhh
+                    break
+                }
             }
         }
-        
-        /*
-        if in "flag" state
-        
-        read one char.
-        
-        - if doesn't match existing flag, do error
-        - if matches, run flag handler, and:
-        
-        - if needs arg, put in "arg" state
-        - if not, put in "anything" state
-        */
     }
     
     enum Flag {
@@ -86,23 +144,6 @@ class CommandLine {
         case I(Int -> Void)
         case D(Double -> Void)
         case Usage
-        
-        func handle(value: String) {
-            switch self {
-            case let .V(fn): fn()
-            case let .S(fn): fn(value)
-            case let .I(fn): fn((value as NSString).integerValue)
-            case let .D(fn): fn((value as NSString).doubleValue)
-            case .Usage: break
-            }
-        }
-        
-        func isUsage() -> Bool {
-            switch self {
-            case .Usage: return true
-            default: return false
-            }
-        }
         
         func needsArg() -> Bool {
             switch self {
