@@ -10,7 +10,7 @@ class Choice {
     var hasAllCharacters = false
     var score = 0
     
-    init(str: String) {
+    init(_ str: String) {
         raw = str
         normalized = str.lowercaseString
         displayString = NSMutableAttributedString(string: raw)

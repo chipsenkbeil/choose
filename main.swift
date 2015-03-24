@@ -6,7 +6,7 @@ var useIndexes = false
 var highlightColor = colorFromHex("0000FF")
 var numRows = 10
 var percentWidth: Double? = nil
-var font: NSFont
+var queryFont: NSFont
 
 func showVersion() {
     println(NSBundle.mainBundle().infoDictionary!["CFBundleVersion"]);
@@ -30,7 +30,7 @@ CommandLine.parse(
     ],
     done: { args in
         if let tryFont = NSFont(name: fontName, size: CGFloat(fontSize)) {
-            font = tryFont
+            queryFont = tryFont
         }
         
         app.setActivationPolicy(.Accessory)

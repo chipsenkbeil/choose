@@ -6,40 +6,21 @@ extension NSApplication {
     func setView(view: AnyObject!) {}
 }
 
-
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
-    var win: NSWindow?
-    var choices = [Choice]()
+    let windowController = WindowController()
     
     func applicationDidFinishLaunching(notification: NSNotification) {
-        let inputItems = getInputItems()
-        if inputItems == nil {
-            cancel()
-        }
-        
+        chooser.ensureHasItems()
         app.activateIgnoringOtherApps(true)
         
+        // ...
         
-        
-        win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
-            styleMask: NSTitledWindowMask,
-            backing: .Buffered,
-            defer: false)
-        
-        win?.makeKeyAndOrderFront(nil)
+        windowController.showWindow(nil)
     }
     
     func choose() {
         
-    }
-    
-    func cancel() {
-        if useIndexes {
-            writeOutput("-1")
-        }
-        
-        exit(1)
     }
     
 }

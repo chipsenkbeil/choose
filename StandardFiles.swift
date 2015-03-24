@@ -1,6 +1,6 @@
 import Foundation
 
-func getInputItems() -> [String]? {
+func getStdinLines() -> [String]? {
     let stdinHandle = NSFileHandle.fileHandleWithStandardInput()
     let inputData = stdinHandle.readDataToEndOfFile()
     
