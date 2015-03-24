@@ -31,10 +31,11 @@ private struct FlexGenerator<T> {
 class CommandLine {
     
     private enum State {
-        case Ready
-        case Flag
-        case Arg
-        case FinishedSoleFlag
+        case ReadyForFlagOrArgs
+        case ReadingFlagCharacter
+        case JustFinishedValuelessFlag
+        case InsideValue
+        case Error
     }
     
     private enum Token: Printable {
@@ -48,103 +49,17 @@ class CommandLine {
             }
         }
         
+        func asChar() -> Character? {
+            switch self {
+            case let Char(c): return c
+            default: return nil
+            }
+        }
+        
         func isGap() -> Bool {
             switch self {
             case Gap: return true
             default: return false
-            }
-        }
-    }
-    
-    private let usage: String
-    private var tokens: FlexGenerator<Token>
-    private let flags: [Character:Flag]
-    private var state: State = .Ready
-    
-    private init(usage: String, tokens: FlexGenerator<Token>, flags: [Character:Flag]) {
-        self.usage = usage
-        self.tokens = tokens
-        self.flags = flags
-    }
-    
-    private func showUsage() {
-        println(usage)
-        exit(0)
-    }
-    
-    private func handle(flag: Flag, _ value: String) {
-        switch flag {
-        case let .V(fn): fn()
-        case let .S(fn): fn(value)
-        case let .I(fn): fn((value as NSString).integerValue)
-        case let .D(fn): fn((value as NSString).doubleValue)
-        case .Usage: showUsage()
-        }
-    }
-    
-    private func parse() {
-        while true {
-            let c = tokens.next()
-            
-            switch state {
-            case .Ready:
-                switch c {
-                case .None:
-                    // we hit the end!
-                    return
-                case .Some(.Char("-")):
-                    state = .Flag
-                case .Some(.Gap):
-                    // ok, we're done; the rest are arguments
-                    return
-                default:
-                    // ok, we're done; this begins the arguments
-                    return
-                }
-            case .Flag:
-                switch c {
-                case .None:
-                    // this is an error! i think?
-                    break
-                case let .Some(.Char(x)):
-                    if let flag = flags[x] {
-                        if flag.needsArg() {
-                            state = .Arg
-                            // needs arg; store handler and call it later when you have one.
-                        }
-                        else {
-                            handle(flag, "")
-                            state = .FinishedSoleFlag
-                            // doesn't need arg; call immediately and be done with this flag
-                        }
-                    }
-                    else {
-                        // error: didn't find match!
-                        showUsage()
-                    }
-                default:
-                    break
-                }
-                
-                // uhh
-                break
-            case .Arg:
-                // uhh
-                break
-            case .FinishedSoleFlag:
-                switch c {
-                case let .Some(.Char(x)):
-                    if let flag = flags[x] {
-                        // it's another flag!!! handle it!
-                    }
-                    else {
-                        tokens.ohWaitGoBackOne()
-                    }
-                    break
-                default:
-                    // uhh
-                    break
-                }
             }
         }
     }
@@ -158,17 +73,90 @@ class CommandLine {
         let charArrays = args.map{Array($0)}
         let tokenArrays: [[Token]] = charArrays.map{$0.map{.Char($0)}}
         
+        var state: State = .ReadyForFlagOrArgs
         var tokens = FlexGenerator([.Gap].join(tokenArrays))
         
-        let cli = CommandLine(usage: usage(program), tokens: tokens, flags: flags)
-        cli.parse()
+        var accumulatedValue = ""
+        var lastHandler: Flag?
         
-        let bla = Token.isGap
+        let showUsage: () -> () = {
+            println(usage(program))
+            exit(0)
+        }
         
-//        let splits = split(cli.tokens.remainder, Token.isGap, maxSplit: 0, allowEmptySlices: true)
+        func handle(flag: Flag, value: String) {
+            switch flag {
+            case let .V(fn): fn()
+            case let .S(fn): fn(value)
+            case let .I(fn): fn((value as NSString).integerValue)
+            case let .D(fn): fn((value as NSString).doubleValue)
+            case .Usage: showUsage()
+            }
+        }
         
+        ParseLoop: while true {
+            let c = tokens.next()
+            
+            switch state {
+            case .ReadyForFlagOrArgs:
+                switch c {
+                case .Some(.Char("-")):
+                    state = .ReadingFlagCharacter
+                default:
+                    break ParseLoop
+                }
+            case .ReadingFlagCharacter:
+                switch c {
+                case let .Some(.Char(c)):
+                    if let flag = flags[c] {
+                        if flag.needsArg() {
+                            state = .InsideValue
+                            lastHandler = flag
+                            accumulatedValue = ""
+                        }
+                        else {
+                            handle(flag, "")
+                            state = .JustFinishedValuelessFlag
+                        }
+                    }
+                    else {
+                        state = .Error
+                        break ParseLoop
+                    }
+                default:
+                    state = .Error
+                    break ParseLoop
+                }
+            case .JustFinishedValuelessFlag:
+                switch c {
+                case let .Some(.Char(c)):
+                    break
+                default:
+                    break
+                }
+            case .InsideValue:
+                switch c {
+                case let .Some(.Char(c)):
+                    accumulatedValue.append(c)
+                default:
+                    if let handler = lastHandler {
+                        handle(handler, accumulatedValue)
+                        lastHandler = nil
+                    }
+                }
+            case .Error:
+                break // should be impossible
+            }
+        }
         
+        if state == .Error {
+            return
+        }
         
+        // we can be sure remainder are args now!
+        
+        let splits = split(tokens.remainder, { $0.isGap() })
+        let strs = splits.map{$0.map{map($0.asChar(), {$0!})}}
     }
     
     enum Flag {
