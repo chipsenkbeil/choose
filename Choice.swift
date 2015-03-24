@@ -8,7 +8,7 @@ class Choice {
     let displayString: NSMutableAttributedString
     
     var hasAllCharacters = false
-    let score = 0
+    var score = 0
     
     init(str: String) {
         raw = str
@@ -33,23 +33,45 @@ class Choice {
     }
     
     func analyze(query: String) {
-        
+        score = 0
         hasAllCharacters = false
-        
         indexSet.removeAllIndexes()
         
-        var lastPos = countElements(normalized) - 1
-        
-        var foundAll = true
-        
-        for var i = countElements(query) - 1; i >= 0; i-- {
-            
-            let qc = query[i]
-            
+        var queryChars = reverse(query).generate()
+        var queryChar = queryChars.next() // let's assume it's non-nil to start with
+        for (i, choiceChar) in reverse(Array(enumerate(normalized))) {
+            if choiceChar == queryChar {
+                indexSet.addIndex(i)
+                queryChar = queryChars.next()
+                if queryChar == nil {
+                    // good! we're done here; let's go.
+                    break
+                }
+            }
         }
         
+        hasAllCharacters = queryChar != nil // i.e., the full query string wasn't matched
         
-        // TODO
+        if !hasAllCharacters || indexSet.count == 0 {
+            return
+        }
+        
+        var numRanges: Int = 0
+        var lengthScore: Int = 0
+        
+        // to be honest, this is probably the stupidest scoring algorithm ever invented.
+        // maybe someone who knows what they're doing should rewrite it ;)
+        
+        indexSet.enumerateRangesUsingBlock { range, stop in
+            numRanges++
+            lengthScore += range.length * 100
+        }
+        
+        lengthScore /= numRanges
+        
+        let percentScore = Double(indexSet.count / countElements(normalized)) * 100.0
+        
+        score = lengthScore + Int(percentScore)
     }
     
 }
