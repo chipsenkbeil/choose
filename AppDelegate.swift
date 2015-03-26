@@ -11,7 +11,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let windowController = WindowController()
     
     func applicationDidFinishLaunching(notification: NSNotification) {
-        chooser.ensureHasItems()
         app.activateIgnoringOtherApps(true)
         
         // ...
@@ -19,8 +18,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         windowController.showWindow(nil)
     }
     
-    func choose() {
-        
+    func applicationDidResignActive(notification: NSNotification) {
+        chooser.cancel()
     }
     
 }

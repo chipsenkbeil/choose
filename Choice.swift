@@ -1,6 +1,6 @@
 import Cocoa
 
-class Choice {
+class Choice: Equatable {
     
     let normalized: String
     let raw: String
@@ -74,4 +74,8 @@ class Choice {
         score = lengthScore + Int(percentScore)
     }
     
+}
+
+func ==(a: Choice, b: Choice) -> Bool {
+    return a.raw == b.raw
 }

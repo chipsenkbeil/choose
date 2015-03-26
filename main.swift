@@ -13,8 +13,9 @@ func showVersion() {
     exit(0)
 }
 
-var fontName = "Menlo"
-var fontSize = 26.0
+let defaultQueryFont = NSFont(name: "Menlo", size: 26.0)!
+var fontName = defaultQueryFont.fontName
+var fontSize = defaultQueryFont.pointSize
 
 CommandLine.parse(
     usage: { "usage: \($0) [-i] [-v] [-n rows=10] [-w widthpercent=auto] [-f fontname=Menlo] [-s fontsize=26] [-c highlight=0000FF]" },
@@ -22,16 +23,16 @@ CommandLine.parse(
         "i": .V({ useIndexes = true }),
         "f": .S({ fontName = $0 }),
         "c": .S({ highlightColor = colorFromHex($0) }),
-        "s": .D({ fontSize = $0 }),
+        "s": .D({ fontSize = CGFloat($0) }),
         "n": .I({ numRows = $0 }),
         "w": .D({ percentWidth = $0 }),
         "v": .V({ showVersion() }),
         "h": .Usage,
     ],
     done: { args in
-        if let tryFont = NSFont(name: fontName, size: CGFloat(fontSize)) {
-            queryFont = tryFont
-        }
+        queryFont = NSFont(name: fontName, size: fontSize) ?? defaultQueryFont
+        
+        chooser.ensureHasItems()
         
         app.setActivationPolicy(.Accessory)
         app.delegate = AppDelegate()
