@@ -77,5 +77,5 @@ class Choice: Equatable {
 }
 
 func ==(a: Choice, b: Choice) -> Bool {
-    return a.raw == b.raw
+    return a === b
 }
