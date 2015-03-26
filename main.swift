@@ -1,9 +1,14 @@
 import Cocoa
 
+extension NSApplication {
+    func setColorGridView(view: AnyObject!) {}
+    func setView(view: AnyObject!) {}
+}
+
 let app = NSApplication.sharedApplication()
 
 var useIndexes = false
-var highlightColor = colorFromHex("0000FF")
+var highlightColor = NSColor(hex: "0000FF")
 var numRows = 10
 var percentWidth: Double? = nil
 var queryFont = NSFont(name: "Menlo", size: 26.0)!
@@ -22,7 +27,7 @@ CommandLine.parse(
     flags: [
         "i": .V({ useIndexes = true }),
         "f": .S({ chooseFont(name: $0) }),
-        "c": .S({ highlightColor = colorFromHex($0) }),
+        "c": .S({ highlightColor = NSColor(hex: $0) }),
         "s": .D({ chooseFont(size: $0) }),
         "n": .I({ numRows = $0 }),
         "w": .D({ percentWidth = $0 }),

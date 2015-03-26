@@ -1,11 +1,5 @@
 import Cocoa
 
-
-extension NSApplication {
-    func setColorGridView(view: AnyObject!) {}
-    func setView(view: AnyObject!) {}
-}
-
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     let windowController = WindowController()

@@ -1,5 +1,12 @@
 import Cocoa
 
+class Window: NSWindow {
+    
+    override var canBecomeKeyWindow: Bool  { return true }
+    override var canBecomeMainWindow: Bool { return true }
+    
+}
+
 class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate {
     
     private var win: NSWindow { return window! }

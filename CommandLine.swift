@@ -1,6 +1,6 @@
 import Foundation
 
-private struct FlexGenerator<T> {
+private struct BiDirectionalEnumerator<T> {
     
     let elements: [T]
     var index = 0
@@ -9,17 +9,17 @@ private struct FlexGenerator<T> {
         elements = e
     }
     
-    mutating func next() -> T? {
+    mutating func move(by: Int = 1) {
+        index += by
+    }
+    
+    func get() -> T? {
         if index == elements.endIndex {
             return nil
         }
         else {
-            return elements[index++]
+            return elements[index]
         }
-    }
-    
-    mutating func ohWaitGoBackOne() {
-        index--
     }
     
     var remainder: [T] {
@@ -62,6 +62,11 @@ class CommandLine {
             default: return false
             }
         }
+        
+        static func strings(tokens: [Token]) -> [String] {
+            let splits = split(tokens, { $0.isGap() })
+            return splits.map{String($0.map{$0.asChar()!})}
+        }
     }
     
     class func parse(#usage: String -> String, flags: [Character:Flag], done: [String] -> ()) {
@@ -74,7 +79,7 @@ class CommandLine {
         let tokenArrays: [[Token]] = charArrays.map{$0.map{.Char($0)}}
         
         var state: State = .ReadyForFlagOrArgs
-        var tokens = FlexGenerator([.Gap].join(tokenArrays))
+        var tokens = BiDirectionalEnumerator([.Gap].join(tokenArrays))
         
         var accumulatedValue = ""
         var lastHandler: Flag?
@@ -95,7 +100,8 @@ class CommandLine {
         }
         
         ParseLoop: while true {
-            let c = tokens.next()
+            tokens.move(by: 1)
+            let c = tokens.get()
             
             switch state {
             case .ReadyForFlagOrArgs:
@@ -145,18 +151,16 @@ class CommandLine {
                     }
                 }
             case .Error:
-                break // should be impossible
+                assertionFailure("uhh, this should be impossible")
             }
         }
         
         if state == .Error {
-            return
+            assertionFailure("error parsing arguments somehow")
         }
-        
-        // we can be sure remainder are args now!
-        
-        let splits = split(tokens.remainder, { $0.isGap() })
-        let strs = splits.map{$0.map{map($0.asChar(), {$0!})}}
+        else {
+            done(Token.strings(tokens.remainder))
+        }
     }
     
     enum Flag {
