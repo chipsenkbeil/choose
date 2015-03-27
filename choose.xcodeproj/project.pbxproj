@@ -15,6 +15,7 @@
 		947818F01ABF71F70028F962 /* SearchFieldController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947818EF1ABF71F70028F962 /* SearchFieldController.swift */; };
 		947818F21ABF72FC0028F962 /* Choice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947818F11ABF72FC0028F962 /* Choice.swift */; };
 		949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949BAE3C1ABDCEF300C47FDA /* Color.swift */; };
+		94A36EC41AC5B20C0079FF0B /* Ascii.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A36EC31AC5B20C0079FF0B /* Ascii.swift */; };
 		94CB5DAB1ABA1815009270CC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CB5DAA1ABA1815009270CC /* main.swift */; };
 		94CE3E221ABD022200796385 /* CommandLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CE3E211ABD022200796385 /* CommandLine.swift */; };
 		94CE3E241ABD053700796385 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CE3E231ABD053700796385 /* AppDelegate.swift */; };
@@ -41,6 +42,7 @@
 		947818EF1ABF71F70028F962 /* SearchFieldController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchFieldController.swift; sourceTree = "<group>"; };
 		947818F11ABF72FC0028F962 /* Choice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Choice.swift; sourceTree = "<group>"; };
 		949BAE3C1ABDCEF300C47FDA /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
+		94A36EC31AC5B20C0079FF0B /* Ascii.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Ascii.swift; sourceTree = "<group>"; };
 		94CB5DA01ABA1799009270CC /* choose */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = choose; sourceTree = BUILT_PRODUCTS_DIR; };
 		94CB5DAA1ABA1815009270CC /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		94CB5DAC1ABA1828009270CC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 				9454FBB71AC1A94400C687E0 /* Chooser.swift */,
 				949BAE3C1ABDCEF300C47FDA /* Color.swift */,
 				941C06731AC49355008474DC /* Hex.swift */,
+				94A36EC31AC5B20C0079FF0B /* Ascii.swift */,
 				94CE3E211ABD022200796385 /* CommandLine.swift */,
 				941C06711AC49294008474DC /* Tests.swift */,
 				94CB5DAC1ABA1828009270CC /* Info.plist */,
@@ -149,6 +152,7 @@
 				947818F01ABF71F70028F962 /* SearchFieldController.swift in Sources */,
 				941C06741AC49355008474DC /* Hex.swift in Sources */,
 				949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */,
+				94A36EC41AC5B20C0079FF0B /* Ascii.swift in Sources */,
 				9454FBB61AC1A7B400C687E0 /* WindowController.swift in Sources */,
 				94CB5DAB1ABA1815009270CC /* main.swift in Sources */,
 				9454FBB81AC1A94400C687E0 /* Chooser.swift in Sources */,

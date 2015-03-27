@@ -1,23 +1,29 @@
 import Cocoa
 
+private func expectedEquals<T>(a: T, b: T) -> String { return "\n expected: \(a)\n      got: \(b)\n" }
 infix operator ==> {}
+private func ==> <T: Equatable>(a: T, b: T)     { assert(a == b, expectedEquals(a, b)) }
+private func ==> <T: Equatable>(a: T?, b: T?)   { assert(a == b, expectedEquals(a, b)) }
+private func ==> <T: Equatable>(a: [T], b: [T]) { assert(a == b, expectedEquals(a, b)) }
 
-private func ==><T: Equatable>(a: T, b: T) {
-    assert(a == b, "\n expected: \(a)\n      got: \(b)\n")
-}
-
-private func ==><T: Equatable>(a: [T], b: [T]) {
-    assert(a == b, "\n expected: \(a)\n      got: \(b)\n")
+private func testAscii() {
+    Int(ascii: "A") ==> 65
+    Int(ascii: "a") ==> 97
+    Int(ascii: " ") ==> 32
+    Int(ascii: "z") ==> 122
+    Int(ascii: "†") ==> nil
 }
 
 private func testHex() {
-    Int(hex: "100") ==> 256
-    Int(hex: "ff") ==> 255
-    Int(hex: "FF") ==> 255
-    Int(hex: "FfF") ==> 4095
-    Int(hex: "7c") ==> 124
-    Int(hex: "deadbeef") ==> 3735928559
-    Int(hex: "deadbeef") ==> 3735928559
+    Int(hex: "quux") ==> nil
+    Int(hex: "z") ==> nil
+    Int(hex: "100")! ==> 0x100
+    Int(hex: "ff")! ==> 0xff
+    Int(hex: "FF")! ==> 0xFF
+    Int(hex: "FfF")! ==> 0xFfF
+    Int(hex: "7c")! ==> 0x7c
+    Int(hex: "deadbeef")! ==> 0xdeadbeef
+    Int(hex: "23487fb")! ==> 0x23487fb
 }
 
 private func testColor() {
@@ -51,6 +57,7 @@ private func testCommandLine() {
 }
 
 func runTests() {
+    testAscii()
     testHex()
     testColor()
     testCommandLine()
