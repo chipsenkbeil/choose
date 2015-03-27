@@ -5,6 +5,8 @@ extension NSApplication {
     func setView(view: AnyObject!) {}
 }
 
+runTests()
+
 let app = NSApplication.sharedApplication()
 
 var useIndexes = false
@@ -22,8 +24,11 @@ func chooseFont(name: String = queryFont.fontName, size: Double = Double(queryFo
     queryFont = NSFont(name: name, size: CGFloat(size)) ?? queryFont
 }
 
-CommandLine.parse(
-    usage: { "usage: \($0) [-i] [-v] [-n rows=10] [-w widthpercent=auto] [-f fontname=Menlo] [-s fontsize=26] [-c highlight=0000FF]" },
+CommandLine(
+    usage: {
+        println("usage: \($0) [-i] [-v] [-n rows=10] [-w widthpercent=auto] [-f fontname=Menlo] [-s fontsize=26] [-c highlight=0000FF]")
+        exit(0)
+    },
     flags: [
         "i": .V({ useIndexes = true }),
         "f": .S({ chooseFont(name: $0) }),
@@ -41,4 +46,4 @@ CommandLine.parse(
         app.delegate = AppDelegate()
         NSApplicationMain(C_ARGC, C_ARGV)
     }
-)
+).parse()

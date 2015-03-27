@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		941C06701AC487E5008474DC /* ChoiceListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941C066F1AC487E5008474DC /* ChoiceListController.swift */; };
+		941C06721AC49294008474DC /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941C06711AC49294008474DC /* Tests.swift */; };
+		941C06741AC49355008474DC /* Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941C06731AC49355008474DC /* Hex.swift */; };
 		9454FBB61AC1A7B400C687E0 /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9454FBB51AC1A7B400C687E0 /* WindowController.swift */; };
 		9454FBB81AC1A94400C687E0 /* Chooser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9454FBB71AC1A94400C687E0 /* Chooser.swift */; };
 		947818F01ABF71F70028F962 /* SearchFieldController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947818EF1ABF71F70028F962 /* SearchFieldController.swift */; };
@@ -32,6 +34,8 @@
 
 /* Begin PBXFileReference section */
 		941C066F1AC487E5008474DC /* ChoiceListController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChoiceListController.swift; sourceTree = "<group>"; };
+		941C06711AC49294008474DC /* Tests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
+		941C06731AC49355008474DC /* Hex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Hex.swift; sourceTree = "<group>"; };
 		9454FBB51AC1A7B400C687E0 /* WindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
 		9454FBB71AC1A94400C687E0 /* Chooser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Chooser.swift; sourceTree = "<group>"; };
 		947818EF1ABF71F70028F962 /* SearchFieldController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchFieldController.swift; sourceTree = "<group>"; };
@@ -66,7 +70,9 @@
 				947818F11ABF72FC0028F962 /* Choice.swift */,
 				9454FBB71AC1A94400C687E0 /* Chooser.swift */,
 				949BAE3C1ABDCEF300C47FDA /* Color.swift */,
+				941C06731AC49355008474DC /* Hex.swift */,
 				94CE3E211ABD022200796385 /* CommandLine.swift */,
+				941C06711AC49294008474DC /* Tests.swift */,
 				94CB5DAC1ABA1828009270CC /* Info.plist */,
 				94CB5DA11ABA1799009270CC /* Products */,
 			);
@@ -137,9 +143,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				947818F21ABF72FC0028F962 /* Choice.swift in Sources */,
+				941C06721AC49294008474DC /* Tests.swift in Sources */,
 				94CE3E241ABD053700796385 /* AppDelegate.swift in Sources */,
 				941C06701AC487E5008474DC /* ChoiceListController.swift in Sources */,
 				947818F01ABF71F70028F962 /* SearchFieldController.swift in Sources */,
+				941C06741AC49355008474DC /* Hex.swift in Sources */,
 				949BAE3D1ABDCEF300C47FDA /* Color.swift in Sources */,
 				9454FBB61AC1A7B400C687E0 /* WindowController.swift in Sources */,
 				94CB5DAB1ABA1815009270CC /* main.swift in Sources */,

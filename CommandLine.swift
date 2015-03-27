@@ -69,11 +69,21 @@ class CommandLine {
         }
     }
     
-    class func parse(#usage: String -> String, flags: [Character:Flag], done: [String] -> ()) {
-        let rawargs = (0..<Int(C_ARGC)).map{ String(UTF8String: C_ARGV[$0])! }
-        let program = rawargs.first!
-//        let args = Array(dropFirst(rawargs))
-        let args = ["-if", "foo", "bar", "quux arg with spaces"]
+    private let usage: String -> ()
+    private let flags: [Character:Flag]
+    private let done: [String] -> ()
+    private let arguments: [String]
+    
+    init(usage: String -> (), flags: [Character:Flag], done: [String] -> (), arguments: [String]? = nil) {
+        self.usage = usage
+        self.flags = flags
+        self.done = done
+        self.arguments = arguments ?? (0..<Int(C_ARGC)).map{ String(UTF8String: C_ARGV[$0])! }
+    }
+    
+    func parse() {
+        let program = arguments.first!
+        let args = Array(dropFirst(arguments))
         
         let charArrays = args.map{Array($0)}
         let tokenArrays: [[Token]] = charArrays.map{$0.map{.Char($0)}}
@@ -84,18 +94,13 @@ class CommandLine {
         var accumulatedValue = ""
         var lastHandler: Flag?
         
-        let showUsage: () -> () = {
-            println(usage(program))
-            exit(0)
-        }
-        
         func handle(flag: Flag, value: String) {
             switch flag {
             case let .V(fn): fn()
             case let .S(fn): fn(value)
             case let .I(fn): fn((value as NSString).integerValue)
             case let .D(fn): fn((value as NSString).doubleValue)
-            case .Usage: showUsage()
+            case .Usage: usage(program)
             }
         }
         
