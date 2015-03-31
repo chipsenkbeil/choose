@@ -2,9 +2,9 @@ import Cocoa
 
 private func expectedEquals<T>(a: T, b: T) -> String { return "\n expected: \(a)\n      got: \(b)\n" }
 infix operator ==> {}
-private func ==> <T: Equatable>(a: T, b: T)     { assert(a == b, expectedEquals(a, b)) }
-private func ==> <T: Equatable>(a: T?, b: T?)   { assert(a == b, expectedEquals(a, b)) }
-private func ==> <T: Equatable>(a: [T], b: [T]) { assert(a == b, expectedEquals(a, b)) }
+private func ==> <T where T: Equatable, T: DebugPrintable>(a: T, b: T)     { assert(a == b, expectedEquals(a.debugDescription, b.debugDescription)) }
+private func ==> <T: Equatable>(a: T?, b: T?)   { assert(a == b, expectedEquals(a.debugDescription, b.debugDescription)) }
+private func ==> <T: Equatable>(a: [T], b: [T]) { assert(a == b, expectedEquals(a.debugDescription, b.debugDescription)) }
 
 private func testAscii() {
     Int(ascii: "A") ==> 65
@@ -37,22 +37,22 @@ private func testColor() {
     NSColor(hex: "cc") ==> NSColor(white: 0.8, alpha: 1)
 }
 
-prefix operator ??? {}
-private prefix func ???(fn: () -> ()) {
+prefix operator !! {}
+private prefix func !!(fn: () -> ()) {
     fn()
 }
 
 private func testCommandLine() {
-    ???{
+    !!{
         var done = [String]()
-        CommandLine(usage: { prog in }, flags: ["h":.Usage], done: { done += $0 }, arguments: ["prog", "bla"]).parse()
+        CommandLine(usage: { prog in }, flags: [:], done: { done += $0 }, arguments: ["prog", "bla"]).parse()
         done ==> ["bla"]
     }
     
-    ???{
-        var usage = ""
-        CommandLine(usage: {usage=$0}, flags: ["h":.Usage], done: { args in }, arguments: ["prog", "-h"]).parse()
-        usage ==> "prog"
+    !!{
+        var prog = ""
+        CommandLine(usage: { prog = $0 }, flags: ["h":.Usage], done: { args in }, arguments: ["prog", "-h"]).parse()
+        prog ==> "prog"
     }
 }
 
@@ -60,6 +60,6 @@ func runTests() {
     testAscii()
     testHex()
     testColor()
-    testCommandLine()
-    assert(false, "bla")
+//    testCommandLine()
+//    assert(false, "bla")
 }

@@ -15,7 +15,9 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
     let queryField = NSTextField()
     let listTableView = TableView()
     
-    override func loadWindow() {
+    func makeWindow() {
+        println("loading window")
+        
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1000, height: 1000),
             styleMask: NSFullSizeContentViewWindowMask | NSTitledWindowMask,
@@ -35,6 +37,11 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
         resizeWindow()
         
         win.center()
+        
+        app.mainMenu = NSMenu(title: "bla")
+        app.mainMenu!.add
+        
+        println(app.mainMenu)
         
         setupKeyboardShortcuts()
     }
@@ -206,6 +213,7 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
             }
             return true
         default:
+            println(commandSelector)
             return false
         }
     }
@@ -249,19 +257,19 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
     }
     
     func setupKeyboardShortcuts() {
-        addShortcut("1", mods: .CommandKeyMask) { chooser.pickIndex(0) }
-        addShortcut("2", mods: .CommandKeyMask) { chooser.pickIndex(1) }
-        addShortcut("3", mods: .CommandKeyMask) { chooser.pickIndex(2) }
-        addShortcut("4", mods: .CommandKeyMask) { chooser.pickIndex(3) }
-        addShortcut("5", mods: .CommandKeyMask) { chooser.pickIndex(4) }
-        addShortcut("6", mods: .CommandKeyMask) { chooser.pickIndex(5) }
-        addShortcut("7", mods: .CommandKeyMask) { chooser.pickIndex(6) }
-        addShortcut("8", mods: .CommandKeyMask) { chooser.pickIndex(7) }
-        addShortcut("9", mods: .CommandKeyMask) { chooser.pickIndex(8) }
-        addShortcut("q", mods: .CommandKeyMask) { chooser.cancel() }
-        addShortcut("a", mods: .CommandKeyMask) { self.selectAll(nil) }
-        addShortcut("c", mods: .ControlKeyMask) { chooser.cancel() }
-        addShortcut("g", mods: .ControlKeyMask) { chooser.cancel() }
+//        addShortcut("1", mods: .CommandKeyMask) { chooser.pickIndex(0) }
+//        addShortcut("2", mods: .CommandKeyMask) { chooser.pickIndex(1) }
+//        addShortcut("3", mods: .CommandKeyMask) { chooser.pickIndex(2) }
+//        addShortcut("4", mods: .CommandKeyMask) { chooser.pickIndex(3) }
+//        addShortcut("5", mods: .CommandKeyMask) { chooser.pickIndex(4) }
+//        addShortcut("6", mods: .CommandKeyMask) { chooser.pickIndex(5) }
+//        addShortcut("7", mods: .CommandKeyMask) { chooser.pickIndex(6) }
+//        addShortcut("8", mods: .CommandKeyMask) { chooser.pickIndex(7) }
+//        addShortcut("9", mods: .CommandKeyMask) { chooser.pickIndex(8) }
+//        addShortcut("q", mods: .CommandKeyMask) { chooser.cancel() }
+//        addShortcut("a", mods: .CommandKeyMask) { self.selectAll(nil) }
+//        addShortcut("c", mods: .ControlKeyMask) { chooser.cancel() }
+//        addShortcut("g", mods: .ControlKeyMask) { chooser.cancel() }
     }
     
     func addShortcut(key: String, mods: NSEventModifierFlags, handler: () -> ()) {

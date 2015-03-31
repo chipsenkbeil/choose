@@ -5,9 +5,10 @@ extension NSApplication {
     func setView(view: AnyObject!) {}
 }
 
-runTests()
+//runTests()
 
 let app = NSApplication.sharedApplication()
+let appDelegate = AppDelegate()
 
 var useIndexes = false
 var highlightColor = NSColor(hex: "0000FF")
@@ -43,7 +44,7 @@ CommandLine(
         chooser.ensureHasItems()
         
         app.setActivationPolicy(.Accessory)
-        app.delegate = AppDelegate()
+        app.delegate = appDelegate
         NSApplicationMain(C_ARGC, C_ARGV)
     }
 ).parse()

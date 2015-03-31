@@ -6,10 +6,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     func applicationDidFinishLaunching(notification: NSNotification) {
         app.activateIgnoringOtherApps(true)
-        
-        // ...
-        
-        windowController.showWindow(nil)
+        windowController.makeWindow()
+        windowController.window!.makeKeyAndOrderFront(nil)
     }
     
     func applicationDidResignActive(notification: NSNotification) {

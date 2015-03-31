@@ -65,7 +65,7 @@ class Chooser {
     func getStdinLines() -> [String]? {
         #if DEBUG
             return ["foo", "bar", "baz", "quux"]
-            #else
+        #else
             let stdinHandle = NSFileHandle.fileHandleWithStandardInput()
             let inputData = stdinHandle.readDataToEndOfFile()
             

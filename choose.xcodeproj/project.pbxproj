@@ -249,6 +249,7 @@
 					__info_plist,
 					"$(SRCROOT)/Info.plist",
 				);
+				OTHER_SWIFT_FLAGS = "-DDEBUG";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};

@@ -14,7 +14,7 @@ private struct BiDirectionalEnumerator<T> {
     }
     
     func get() -> T? {
-        if index == elements.endIndex {
+        if index >= elements.endIndex {
             return nil
         }
         else {
@@ -82,6 +82,9 @@ class CommandLine {
     }
     
     func parse() {
+        done([])
+        return;
+        
         let program = arguments.first!
         let args = Array(dropFirst(arguments))
         
@@ -104,8 +107,9 @@ class CommandLine {
             }
         }
         
+        println([.Gap].join(tokenArrays))
+        
         ParseLoop: while true {
-            tokens.move(by: 1)
             let c = tokens.get()
             
             switch state {
@@ -113,10 +117,13 @@ class CommandLine {
                 switch c {
                 case .Some(.Char("-")):
                     state = .ReadingFlagCharacter
+                    continue
                 default:
+                    tokens.move(by: -1)
                     break ParseLoop
                 }
             case .ReadingFlagCharacter:
+                println("handing flag \(c)")
                 switch c {
                 case let .Some(.Char(c)):
                     if let flag = flags[c] {
@@ -126,6 +133,7 @@ class CommandLine {
                             accumulatedValue = ""
                         }
                         else {
+                            println("calling handler")
                             handle(flag, "")
                             state = .JustFinishedValuelessFlag
                         }
@@ -158,7 +166,66 @@ class CommandLine {
             case .Error:
                 assertionFailure("uhh, this should be impossible")
             }
+            
+//            switch state {
+//            case .ReadyForFlagOrArgs:
+//                switch c {
+//                case .Some(.Char("-")):
+//                    state = .ReadingFlagCharacter
+//                    continue
+//                default:
+//                    tokens.move(by: -1)
+//                    break ParseLoop
+//                }
+//            case .ReadingFlagCharacter:
+//                println("handing flag \(c)")
+//                switch c {
+//                case let .Some(.Char(c)):
+//                    if let flag = flags[c] {
+//                        if flag.needsArg() {
+//                            state = .InsideValue
+//                            lastHandler = flag
+//                            accumulatedValue = ""
+//                        }
+//                        else {
+//                            println("calling handler")
+//                            handle(flag, "")
+//                            state = .JustFinishedValuelessFlag
+//                        }
+//                    }
+//                    else {
+//                        state = .Error
+//                        break ParseLoop
+//                    }
+//                default:
+//                    state = .Error
+//                    break ParseLoop
+//                }
+//            case .JustFinishedValuelessFlag:
+//                switch c {
+//                case let .Some(.Char(c)):
+//                    break
+//                default:
+//                    break
+//                }
+//            case .InsideValue:
+//                switch c {
+//                case let .Some(.Char(c)):
+//                    accumulatedValue.append(c)
+//                default:
+//                    if let handler = lastHandler {
+//                        handle(handler, accumulatedValue)
+//                        lastHandler = nil
+//                    }
+//                }
+//            case .Error:
+//                assertionFailure("uhh, this should be impossible")
+//            }
+            
+            tokens.move(by: 1)
         }
+        
+        println("done: \(Token.strings(tokens.remainder))")
         
         if state == .Error {
             assertionFailure("error parsing arguments somehow")
