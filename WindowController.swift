@@ -10,14 +10,11 @@ class Window: NSWindow {
 class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate {
     
     private var win: NSWindow { return window! }
-    private var handlers = [AnyObject]()
     
     let queryField = NSTextField()
     let listTableView = TableView()
     
     func makeWindow() {
-        println("loading window")
-        
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1000, height: 1000),
             styleMask: NSFullSizeContentViewWindowMask | NSTitledWindowMask,
@@ -38,13 +35,26 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
         
         win.center()
         
-        app.mainMenu = NSMenu(title: "bla")
-        app.mainMenu!.add
-        
-        println(app.mainMenu)
-        
-        setupKeyboardShortcuts()
+        setupKeyboardShortcuts([
+            Shortcut(key: "1", mods: [.Command]) { chooser.pickIndex(0) },
+            Shortcut(key: "2", mods: [.Command]) { chooser.pickIndex(1) },
+            Shortcut(key: "3", mods: [.Command]) { chooser.pickIndex(2) },
+            Shortcut(key: "4", mods: [.Command]) { chooser.pickIndex(3) },
+            Shortcut(key: "5", mods: [.Command]) { chooser.pickIndex(4) },
+            Shortcut(key: "6", mods: [.Command]) { chooser.pickIndex(5) },
+            Shortcut(key: "7", mods: [.Command]) { chooser.pickIndex(6) },
+            Shortcut(key: "8", mods: [.Command]) { chooser.pickIndex(7) },
+            Shortcut(key: "9", mods: [.Command]) { chooser.pickIndex(8) },
+            Shortcut(key: "q", mods: [.Command]) { chooser.cancel() },
+            Shortcut(key: "a", mods: [.Command]) { self.selectAll(nil) },
+            Shortcut(key: "c", mods: [.Control]) { chooser.cancel() },
+            Shortcut(key: "g", mods: [.Control]) { chooser.cancel() }])
     }
+    
+    
+    
+    
+    
     
     func setupBlurryBackground() {
         win.titlebarAppearsTransparent = true
@@ -81,7 +91,7 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
         queryField.editable = true
         queryField.target = self
         queryField.action = Selector("choose:")
-        (queryField.cell() as NSTextFieldCell).sendsActionOnEndEditing = false
+        (queryField.cell() as! NSTextFieldCell).sendsActionOnEndEditing = false
         win.contentView.addSubview(queryField)
     }
     
@@ -100,9 +110,9 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
         let col = NSTableColumn(identifier: "thing")
         col.editable = false
         col.width = 10000
-        (col.dataCell as NSCell).font = rowFont
+        (col.dataCell as! NSCell).font = rowFont
         
-        let cell = col.dataCell as NSTextFieldCell
+        let cell = col.dataCell as! NSTextFieldCell
         cell.lineBreakMode = .ByCharWrapping
         
         listTableView.setDataSource(self)
@@ -173,7 +183,7 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
     }
     
     func tableView(tableView: NSTableView, willDisplayCell cell: AnyObject, forTableColumn tableColumn: NSTableColumn?, row: Int) {
-        let aCell = cell as NSTextFieldCell
+        let aCell = cell as! NSTextFieldCell
         
         if tableView.selectedRowIndexes.containsIndex(row) {
             aCell.backgroundColor = NSColor.selectedControlColor().colorWithAlphaComponent(1.0)
@@ -191,7 +201,7 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
     func control(control: NSControl, textView: NSTextView, doCommandBySelector commandSelector: Selector) -> Bool {
         switch commandSelector {
         case "cancelOperation:":
-            if countElements(queryField.stringValue) > 0 {
+            if count(queryField.stringValue) > 0 {
                 textView.moveToBeginningOfDocument(nil)
                 textView.deleteToEndOfParagraph(nil)
             }
@@ -208,12 +218,12 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
             reflectChoice()
             return true
         case "deleteForward:":
-            if countElements(queryField.stringValue) == 0 {
+            if count(queryField.stringValue) == 0 {
                 chooser.cancel()
             }
             return true
         default:
-            println(commandSelector)
+            // println(commandSelector)
             return false
         }
     }
@@ -223,7 +233,7 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
     }
     
     override func selectAll(sender: AnyObject?) {
-        let editor = win.fieldEditor(false, forObject: queryField) as NSTextView
+        let editor = win.fieldEditor(false, forObject: queryField) as! NSTextView
         editor.selectAll(sender)
     }
     
@@ -256,32 +266,16 @@ class WindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegat
         win.setFrame(winRect, display: true)
     }
     
-    func setupKeyboardShortcuts() {
-//        addShortcut("1", mods: .CommandKeyMask) { chooser.pickIndex(0) }
-//        addShortcut("2", mods: .CommandKeyMask) { chooser.pickIndex(1) }
-//        addShortcut("3", mods: .CommandKeyMask) { chooser.pickIndex(2) }
-//        addShortcut("4", mods: .CommandKeyMask) { chooser.pickIndex(3) }
-//        addShortcut("5", mods: .CommandKeyMask) { chooser.pickIndex(4) }
-//        addShortcut("6", mods: .CommandKeyMask) { chooser.pickIndex(5) }
-//        addShortcut("7", mods: .CommandKeyMask) { chooser.pickIndex(6) }
-//        addShortcut("8", mods: .CommandKeyMask) { chooser.pickIndex(7) }
-//        addShortcut("9", mods: .CommandKeyMask) { chooser.pickIndex(8) }
-//        addShortcut("q", mods: .CommandKeyMask) { chooser.cancel() }
-//        addShortcut("a", mods: .CommandKeyMask) { self.selectAll(nil) }
-//        addShortcut("c", mods: .ControlKeyMask) { chooser.cancel() }
-//        addShortcut("g", mods: .ControlKeyMask) { chooser.cancel() }
-    }
-    
-    func addShortcut(key: String, mods: NSEventModifierFlags, handler: () -> ()) {
-        let eventHandler: AnyObject = NSEvent.addLocalMonitorForEventsMatchingMask(.KeyDownMask, handler: { event in
-            let flags = event.modifierFlags & .DeviceIndependentModifierFlagsMask
-            if flags == mods && event.charactersIgnoringModifiers == key {
-                handler()
-                return nil
-            }
-            return event
-        })!
-        handlers.append(eventHandler)
+    func setupKeyboardShortcuts(shortcuts: [Shortcut]) {
+        var mainMenu = NSMenu()
+        let appleMenu = NSMenu()
+        var appleMenuItem = NSMenuItem()
+        mainMenu.addItem(appleMenuItem)
+        mainMenu.setSubmenu(appleMenu, forItem:appleMenuItem)
+        app.mainMenu = mainMenu
+        for menuItem in shortcuts {
+            appleMenu.addItem(menuItem)
+        }
     }
     
     func buildFrames() -> (NSRect, NSRect, NSRect) {

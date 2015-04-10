@@ -64,7 +64,7 @@ class CommandLine {
         }
         
         static func strings(tokens: [Token]) -> [String] {
-            let splits = split(tokens, { $0.isGap() })
+            let splits = split(tokens, isSeparator: { $0.isGap() })
             return splits.map{String($0.map{$0.asChar()!})}
         }
     }
@@ -74,11 +74,11 @@ class CommandLine {
     private let done: [String] -> ()
     private let arguments: [String]
     
-    init(usage: String -> (), flags: [Character:Flag], done: [String] -> (), arguments: [String]? = nil) {
+    init(usage: String -> (), flags: [Character:Flag], done: [String] -> (), arguments: [String] = Process.arguments) {
         self.usage = usage
         self.flags = flags
         self.done = done
-        self.arguments = arguments ?? (0..<Int(C_ARGC)).map{ String(UTF8String: C_ARGV[$0])! }
+        self.arguments = arguments
     }
     
     func parse() {

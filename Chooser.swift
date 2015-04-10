@@ -47,7 +47,7 @@ class Chooser {
         }
         
         // filter and sort matches
-        if countElements(query) > 0 {
+        if count(query) > 0 {
             filteredSortedChoices = choices
                 .filter{ $0.hasAllCharacters }
                 .sorted{ a, b in a.score < b.score }

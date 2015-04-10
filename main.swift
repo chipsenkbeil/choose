@@ -36,7 +36,7 @@ CommandLine(
         "c": .S({ highlightColor = NSColor(hex: $0) }),
         "s": .D({ chooseFont(size: $0) }),
         "n": .I({ numRows = $0 }),
-        "w": .D({ percentWidth = $0 }),
+        "w": .D({ percentWidth = .Some($0) }),
         "v": .V({ showVersion() }),
         "h": .Usage,
     ],
@@ -45,6 +45,6 @@ CommandLine(
         
         app.setActivationPolicy(.Accessory)
         app.delegate = appDelegate
-        NSApplicationMain(C_ARGC, C_ARGV)
+        NSApplicationMain(Process.argc, Process.unsafeArgv)
     }
 ).parse()

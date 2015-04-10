@@ -17,7 +17,7 @@ class Choice: Equatable {
     }
     
     func render() {
-        let len = countElements(normalized)
+        let len = count(normalized)
         let fullRange = NSRange(location: 0, length: len)
         
         displayString.removeAttribute(NSForegroundColorAttributeName, range: fullRange)
@@ -69,7 +69,7 @@ class Choice: Equatable {
         
         lengthScore /= numRanges
         
-        let percentScore = Double(indexSet.count / countElements(normalized)) * 100.0
+        let percentScore = Double(indexSet.count / count(normalized)) * 100.0
         
         score = lengthScore + Int(percentScore)
     }
