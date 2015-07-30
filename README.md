@@ -1,5 +1,5 @@
 # choose2
-rewrite of [choose](https://github.com/sdegutis/choose) just for practicing Good Design™
+*Rewrite of [choose](https://github.com/sdegutis/choose) just for practicing Good Design™*
 
 ## Current Status
 
