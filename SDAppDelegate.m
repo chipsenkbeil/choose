@@ -516,6 +516,11 @@ static int SDPercentWidth;
         [self reflectChoice];
         return YES;
     }
+    else if (commandSelector == @selector(insertTab:)) {
+        [self.queryField setStringValue: [[self.filteredSortedChoices objectAtIndex: self.choice] raw]];
+        [[self.queryField currentEditor] setSelectedRange: NSMakeRange(self.queryField.stringValue.length, 0)];
+        return YES;
+    }
     else if (commandSelector == @selector(deleteForward:)) {
         if ([[self.queryField stringValue] length] == 0)
             [self cancel];
