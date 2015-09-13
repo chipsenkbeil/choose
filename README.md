@@ -12,6 +12,8 @@ choose
 - Run choose -h for more info.
 - [vim integration](./choose.vim)
 
+![animated screenshot](https://raw.githubusercontent.com/sdegutis/choose/master/sshot/anim.gif)
+
 ## Install
 
 ~~~bash
