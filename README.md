@@ -11,6 +11,7 @@ choose
 - Free trial is untimed, Sublime Text style.
 - Run choose -h for more info.
 - [vim integration](./choose.vim)
+- [emacs integration](./choose.el)
 
 ![animated screenshot](https://raw.githubusercontent.com/sdegutis/choose/master/sshot/anim.gif)
 
