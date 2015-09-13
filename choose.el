@@ -1,4 +1,5 @@
 ;; better find-file-in-repository
+;; assumes you have magit and maybe other stuff
 (defun choose/find-file-in-git-repo ()
   (interactive)
   (require 's)
