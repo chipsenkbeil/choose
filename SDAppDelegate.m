@@ -8,10 +8,12 @@
 /******************************************************************************/
 
 static NSColor* SDHighlightColor;
+static NSColor* SDHighlightBackgroundColor;
 static BOOL SDReturnsIndex;
 static NSFont* SDQueryFont;
 static int SDNumRows;
 static int SDPercentWidth;
+static BOOL SDUnderlineDisabled;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -75,36 +77,47 @@ static int SDPercentWidth;
 }
 
 - (void) render {
-    
+
 #ifdef DEBUG
     // for testing
     [self.displayString deleteCharactersInRange:NSMakeRange(0, [self.displayString length])];
     [[self.displayString mutableString] appendString:self.raw];
     [[self.displayString mutableString] appendFormat:@" [%d]", self.score];
 #endif
-    
-    
+
+
     NSUInteger len = [self.normalized length];
     NSRange fullRange = NSMakeRange(0, len);
-    
+
     [self.displayString removeAttribute:NSForegroundColorAttributeName range:fullRange];
-    [self.displayString removeAttribute:NSUnderlineColorAttributeName range:fullRange];
-    [self.displayString removeAttribute:NSUnderlineStyleAttributeName range:fullRange];
-    
+
+    if (SDUnderlineDisabled) {
+        [self.displayString removeAttribute:NSBackgroundColorAttributeName range:fullRange];
+    }
+    else {
+        [self.displayString removeAttribute:NSUnderlineColorAttributeName range:fullRange];
+        [self.displayString removeAttribute:NSUnderlineStyleAttributeName range:fullRange];
+    }
+
     [self.indexSet enumerateIndexesUsingBlock:^(NSUInteger i, BOOL *stop) {
-        [self.displayString addAttribute:NSForegroundColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
-        [self.displayString addAttribute:NSUnderlineColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
-        [self.displayString addAttribute:NSUnderlineStyleAttributeName value:@1 range:NSMakeRange(i, 1)];
+        if (SDUnderlineDisabled) {
+            [self.displayString addAttribute:NSBackgroundColorAttributeName value:[SDHighlightColor colorWithAlphaComponent:0.8] range:NSMakeRange(i, 1)];
+        }
+        else {
+            [self.displayString addAttribute:NSForegroundColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
+            [self.displayString addAttribute:NSUnderlineColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
+            [self.displayString addAttribute:NSUnderlineStyleAttributeName value:@1 range:NSMakeRange(i, 1)];
+        }
     }];
 }
 
 - (void) analyze:(NSString*)query {
-    
+
     // TODO: might not need this variable?
     self.hasAllCharacters = NO;
-    
+
     [self.indexSet removeAllIndexes];
-    
+
     NSUInteger lastPos = [self.normalized length] - 1;
     BOOL foundAll = YES;
     for (NSInteger i = [query length] - 1; i >= 0; i--) {
@@ -124,32 +137,32 @@ static int SDPercentWidth;
             break;
         }
     }
-    
+
     self.hasAllCharacters = foundAll;
-    
+
     // skip the rest when it won't be used by the caller
     if (!self.hasAllCharacters)
         return;
-    
+
     // update score
-    
+
     self.score = 0;
-    
+
     if ([self.indexSet count] == 0)
         return;
-    
+
     __block int lengthScore = 0;
     __block int numRanges = 0;
-    
+
     [self.indexSet enumerateRangesUsingBlock:^(NSRange range, BOOL *stop) {
         numRanges++;
         lengthScore += (range.length * 100);
     }];
-    
+
     lengthScore /= numRanges;
-    
+
     int percentScore = ((double)[self.indexSet count] / (double)[self.normalized length]) * 100.0;
-    
+
     self.score = lengthScore + percentScore;
 }
 
@@ -181,17 +194,17 @@ static int SDPercentWidth;
     NSArray* inputItems = [self getInputItems];
 //    NSLog(@"%ld", [inputItems count]);
 //    NSLog(@"%@", inputItems);
-    
+
     if ([inputItems count] < 1)
         [self cancel];
-    
+
     [NSApp activateIgnoringOtherApps: YES];
-    
+
     self.choices = [self choicesFromInputItems: inputItems];
-    
+
     NSRect winRect, textRect, dividerRect, listRect;
     [self getFrameForWindow: &winRect queryField: &textRect divider: &dividerRect tableView: &listRect];
-    
+
     [self setupWindow: winRect];
     [self setupQueryField: textRect];
     [self setupDivider: dividerRect];
@@ -200,7 +213,7 @@ static int SDPercentWidth;
     [self resizeWindow];
     [self.window center];
     [self.window makeKeyAndOrderFront: nil];
-    
+
     // these even work inside NSAlert, so start them later
     [self setupKeyboardShortcuts];
 }
@@ -211,15 +224,15 @@ static int SDPercentWidth;
 
 - (void) setupWindow:(NSRect)winRect {
     BOOL usingYosemite = (NSClassFromString(@"NSVisualEffectView") != nil);
-    
+
     NSUInteger styleMask = usingYosemite ? (NSFullSizeContentViewWindowMask | NSTitledWindowMask) : NSBorderlessWindowMask;
     self.window = [[SDMainWindow alloc] initWithContentRect: winRect
                                                   styleMask: styleMask
                                                     backing: NSBackingStoreBuffered
                                                       defer: NO];
-    
+
     [self.window setDelegate: self];
-    
+
     if (usingYosemite) {
         self.window.titlebarAppearsTransparent = YES;
         NSVisualEffectView* blur = [[NSVisualEffectView alloc] initWithFrame: [[self.window contentView] bounds]];
@@ -234,17 +247,17 @@ static int SDPercentWidth;
     NSRect iconRect, space;
     NSDivideRect(textRect, &iconRect, &textRect, NSHeight(textRect) / 1.25, NSMinXEdge);
     NSDivideRect(textRect, &space, &textRect, 5.0, NSMinXEdge);
-    
+
     CGFloat d = NSHeight(iconRect) * 0.10;
     iconRect = NSInsetRect(iconRect, d, d);
-    
+
     NSImageView* icon = [[NSImageView alloc] initWithFrame: iconRect];
     [icon setAutoresizingMask: NSViewMaxXMargin | NSViewMinYMargin ];
-    [icon setImage: [NSImage imageNamed: NSImageNameRightFacingTriangleTemplate]];
-    [icon setImageScaling: NSImageScaleProportionallyUpOrDown];
+    [icon setImage: [NSImage imageNamed:  NSImageNameRightFacingTriangleTemplate]];
+    [icon setImageScaling: NSImageScaleProportionallyDown];
 //    [icon setImageFrameStyle: NSImageFrameButton];
     [[self.window contentView] addSubview: icon];
-    
+
     self.queryField = [[NSTextField alloc] initWithFrame: textRect];
     [self.queryField setAutoresizingMask: NSViewWidthSizable | NSViewMinYMargin ];
     [self.queryField setDelegate: self];
@@ -280,15 +293,15 @@ static int SDPercentWidth;
 
 - (void) setupResultsTable:(NSRect)listRect {
     NSFont* rowFont = [NSFont fontWithName:[SDQueryFont fontName] size: [SDQueryFont pointSize] * 0.70];
-    
+
     NSTableColumn *col = [[NSTableColumn alloc] initWithIdentifier:@"thing"];
     [col setEditable: NO];
     [col setWidth: 10000];
     [[col dataCell] setFont: rowFont];
-    
+
     NSTextFieldCell* cell = [col dataCell];
     [cell setLineBreakMode: NSLineBreakByCharWrapping];
-    
+
     self.listTableView = [[SDTableView alloc] init];
     [self.listTableView setDataSource: self];
     [self.listTableView setDelegate: self];
@@ -302,7 +315,7 @@ static int SDPercentWidth;
     [self.listTableView setTarget: self];
     [self.listTableView setDoubleAction: @selector(chooseByDoubleClicking:)];
     [self.listTableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
-    
+
     NSScrollView* listScrollView = [[NSScrollView alloc] initWithFrame: listRect];
     [listScrollView setVerticalScrollElasticity: NSScrollElasticityNone];
     [listScrollView setAutoresizingMask: NSViewWidthSizable | NSViewHeightSizable ];
@@ -323,15 +336,15 @@ static int SDPercentWidth;
 
 - (void) resizeWindow {
     NSRect screenFrame = [[NSScreen mainScreen] visibleFrame];
-    
+
     CGFloat rowHeight = [self.listTableView rowHeight];
     CGFloat intercellHeight =[self.listTableView intercellSpacing].height;
     CGFloat allRowsHeight = (rowHeight + intercellHeight) * SDNumRows;
-    
+
     CGFloat windowHeight = NSHeight([[self.window contentView] bounds]);
     CGFloat tableHeight = NSHeight([[self.listTableView superview] frame]);
     CGFloat finalHeight = (windowHeight - tableHeight) + allRowsHeight;
-    
+
     CGFloat width;
     if (SDPercentWidth >= 0 && SDPercentWidth <= 100) {
         CGFloat percentWidth = (CGFloat)SDPercentWidth / 100.0;
@@ -342,7 +355,7 @@ static int SDPercentWidth;
         width = MIN(width, 800);
         width = MAX(width, 400);
     }
-    
+
     NSRect winRect = NSMakeRect(0, 0, width, finalHeight);
     [self.window setFrame:winRect display:YES];
 }
@@ -382,16 +395,16 @@ static int SDPercentWidth;
     return choice.displayString;
 }
 
-- (void)tableViewSelectionDidChange:(NSNotification *)notification {
+- (void) tableViewSelectionDidChange:(NSNotification *)notification {
     self.choice = [self.listTableView selectedRow];
 }
 
-- (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex {
+- (void) tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex {
     if ([[aTableView selectedRowIndexes] containsIndex:rowIndex])
-        [aCell setBackgroundColor: [[NSColor selectedControlColor] colorWithAlphaComponent: 1.0]];
+        [aCell setBackgroundColor: [SDHighlightBackgroundColor colorWithAlphaComponent: 0.5]];
     else
         [aCell setBackgroundColor: [NSColor clearColor]];
-    
+
     [aCell setDrawsBackground:YES];
 }
 
@@ -401,37 +414,37 @@ static int SDPercentWidth;
 
 - (void) runQuery:(NSString*)query {
     query = [query lowercaseString];
-    
+
     self.filteredSortedChoices = [self.choices mutableCopy];
-    
+
     // analyze (cache)
     for (SDChoice* choice in self.filteredSortedChoices)
         [choice analyze: query];
-    
+
     if ([query length] >= 1) {
-        
+
         // filter out non-matches
         for (SDChoice* choice in [self.filteredSortedChoices copy]) {
             if (!choice.hasAllCharacters)
                 [self.filteredSortedChoices removeObject: choice];
         }
-        
+
         // sort remainder
         [self.filteredSortedChoices sortUsingComparator:^NSComparisonResult(SDChoice* a, SDChoice* b) {
             if (a.score > b.score) return NSOrderedAscending;
             if (a.score < b.score) return NSOrderedDescending;
             return NSOrderedSame;
         }];
-        
+
     }
-    
+
     // render remainder
     for (SDChoice* choice in self.filteredSortedChoices)
         [choice render];
-    
+
     // show!
     [self.listTableView reloadData];
-    
+
     // push choice back to start
     self.choice = 0;
     [self reflectChoice];
@@ -444,7 +457,7 @@ static int SDPercentWidth;
 - (void) choose {
     if ([self.filteredSortedChoices count] == 0)
         [self cancel];
-    
+
     if (SDReturnsIndex) {
         SDChoice* choice = [self.filteredSortedChoices objectAtIndex: self.choice];
         NSUInteger realIndex = [self.choices indexOfObject: choice];
@@ -454,7 +467,7 @@ static int SDPercentWidth;
         SDChoice* choice = [self.filteredSortedChoices objectAtIndex: self.choice];
         [self writeOutput: choice.raw];
     }
-    
+
     exit(0);
 }
 
@@ -462,7 +475,7 @@ static int SDPercentWidth;
     if (SDReturnsIndex) {
         [self writeOutput: [NSString stringWithFormat:@"%d", -1]];
     }
-    
+
     exit(1);
 }
 
@@ -473,7 +486,7 @@ static int SDPercentWidth;
 - (void) pickIndex:(NSUInteger)idx {
     if (idx >= [self.filteredSortedChoices count])
         return;
-    
+
     self.choice = idx;
     [self choose];
 }
@@ -486,7 +499,7 @@ static int SDPercentWidth;
     NSInteger row = [self.listTableView clickedRow];
     if (row == -1)
         return;
-    
+
     self.choice = row;
     [self choose];
 }
@@ -525,7 +538,7 @@ static int SDPercentWidth;
         if ([[self.queryField stringValue] length] == 0)
             [self cancel];
     }
-    
+
 //    NSLog(@"[%@]", NSStringFromSelector(commandSelector));
     return NO;
 }
@@ -549,7 +562,7 @@ static int SDPercentWidth;
     dispatch_once(&onceToken, ^{
         handlers = [NSMutableArray array];
     });
-    
+
     id x = [NSEvent addLocalMonitorForEventsMatchingMask:NSKeyDownMask handler:^ NSEvent*(NSEvent* event) {
         NSEventModifierFlags flags = ([event modifierFlags] & NSDeviceIndependentModifierFlagsMask);
         if (flags == mods && [[event charactersIgnoringModifiers] isEqualToString: key]) {
@@ -581,24 +594,24 @@ static NSColor* SDColorFromHex(NSString* hex) {
 /******************************************************************************/
 
 - (NSArray*) getInputItems {
-    
+
 #ifdef DEBUG
-    
+
     #include "fakedata.h"
-    
+
 #else
-    
+
     NSFileHandle* stdinHandle = [NSFileHandle fileHandleWithStandardInput];
     NSData* inputData = [stdinHandle readDataToEndOfFile];
     NSString* inputStrings = [[[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
+
     if ([inputStrings length] == 0)
         return nil;
-    
+
     return [inputStrings componentsSeparatedByString:@"\n"];
-    
+
 #endif
-    
+
 }
 
 @end
@@ -617,35 +630,48 @@ static void SDShowVersion(const char* name) {
 }
 
 static void usage(const char* name) {
-    printf("usage: %s [-i] [-v] [-n rows=10] [-w widthpercent=50] [-f fontname=Menlo] [-s fontsize=26] [-c highlight=0000FF]\n", name);
+    printf("usage: %s\n", name);
+    printf(" -i           return index of selected element\n");
+    printf(" -v           show choose version\n");
+    printf(" -n [10]      set number of rows\n");
+    printf(" -w [50]      set width of choose window\n");
+    printf(" -f [Menlo]   set font used by choose\n");
+    printf(" -s [26]      set font size used by choose\n");
+    printf(" -c [0000FF]  highlight color for matched string\n");
+    printf(" -b [222222]  background color of selected element\n");
+    printf(" -u           disable underline and use background for matched string\n");
     exit(0);
 }
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         [NSApp setActivationPolicy: NSApplicationActivationPolicyAccessory];
-        
+
         SDReturnsIndex = NO;
+        SDUnderlineDisabled = NO;
         const char* hexColor = "0000FF";
+        const char* hexBackgroundColor = "222222";
         const char* queryFontName = "Menlo";
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
         SDPercentWidth = -1;
-        
+
         static SDAppDelegate* delegate;
         delegate = [[SDAppDelegate alloc] init];
         [NSApp setDelegate: delegate];
-        
+
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:n:w:hi")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:hiu")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
                 case 'c': hexColor = optarg; break;
+                case 'b': hexBackgroundColor = optarg; break;
                 case 's': queryFontSize = atoi(optarg); break;
                 case 'n': SDNumRows = atoi(optarg); break;
                 case 'w': SDPercentWidth = atoi(optarg); break;
                 case 'v': SDShowVersion(argv[0]); break;
+                case 'u': SDUnderlineDisabled = YES; break;
                 case '?':
                 case 'h':
                 default:
@@ -654,10 +680,11 @@ int main(int argc, const char * argv[]) {
         }
         argc -= optind;
         argv += optind;
-        
+
         SDQueryFont = [NSFont fontWithName:[NSString stringWithUTF8String: queryFontName] size:queryFontSize];
         SDHighlightColor = SDColorFromHex([NSString stringWithUTF8String: hexColor]);
-        
+        SDHighlightBackgroundColor = SDColorFromHex([NSString stringWithUTF8String: hexBackgroundColor]);
+
         NSApplicationMain(argc, argv);
     }
     return 0;
