@@ -8,10 +8,12 @@
 /******************************************************************************/
 
 static NSColor* SDHighlightColor;
+static NSColor* SDHighlightBackgroundColor;
 static BOOL SDReturnsIndex;
 static NSFont* SDQueryFont;
 static int SDNumRows;
 static int SDPercentWidth;
+static BOOL SDUnderlineDisabled;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -88,13 +90,24 @@ static int SDPercentWidth;
     NSRange fullRange = NSMakeRange(0, len);
     
     [self.displayString removeAttribute:NSForegroundColorAttributeName range:fullRange];
-    [self.displayString removeAttribute:NSUnderlineColorAttributeName range:fullRange];
-    [self.displayString removeAttribute:NSUnderlineStyleAttributeName range:fullRange];
-    
+
+    if (SDUnderlineDisabled) {
+        [self.displayString removeAttribute:NSBackgroundColorAttributeName range:fullRange];
+    }
+    else {
+        [self.displayString removeAttribute:NSUnderlineColorAttributeName range:fullRange];
+        [self.displayString removeAttribute:NSUnderlineStyleAttributeName range:fullRange];
+    }
+
     [self.indexSet enumerateIndexesUsingBlock:^(NSUInteger i, BOOL *stop) {
-        [self.displayString addAttribute:NSForegroundColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
-        [self.displayString addAttribute:NSUnderlineColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
-        [self.displayString addAttribute:NSUnderlineStyleAttributeName value:@1 range:NSMakeRange(i, 1)];
+        if (SDUnderlineDisabled) {
+            [self.displayString addAttribute:NSBackgroundColorAttributeName value:[SDHighlightColor colorWithAlphaComponent:0.8] range:NSMakeRange(i, 1)];
+        }
+        else {
+            [self.displayString addAttribute:NSForegroundColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
+            [self.displayString addAttribute:NSUnderlineColorAttributeName value:SDHighlightColor range:NSMakeRange(i, 1)];
+            [self.displayString addAttribute:NSUnderlineStyleAttributeName value:@1 range:NSMakeRange(i, 1)];
+        }
     }];
 }
 
@@ -240,8 +253,8 @@ static int SDPercentWidth;
     
     NSImageView* icon = [[NSImageView alloc] initWithFrame: iconRect];
     [icon setAutoresizingMask: NSViewMaxXMargin | NSViewMinYMargin ];
-    [icon setImage: [NSImage imageNamed: NSImageNameRightFacingTriangleTemplate]];
-    [icon setImageScaling: NSImageScaleProportionallyUpOrDown];
+    [icon setImage: [NSImage imageNamed:  NSImageNameRightFacingTriangleTemplate]];
+    [icon setImageScaling: NSImageScaleProportionallyDown];
 //    [icon setImageFrameStyle: NSImageFrameButton];
     [[self.window contentView] addSubview: icon];
     
@@ -388,7 +401,7 @@ static int SDPercentWidth;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex {
     if ([[aTableView selectedRowIndexes] containsIndex:rowIndex])
-        [aCell setBackgroundColor: [[NSColor selectedControlColor] colorWithAlphaComponent: 1.0]];
+        [aCell setBackgroundColor: [SDHighlightBackgroundColor colorWithAlphaComponent: 0.5]];
     else
         [aCell setBackgroundColor: [NSColor clearColor]];
     
@@ -612,7 +625,16 @@ static void SDShowVersion(const char* name) {
 }
 
 static void usage(const char* name) {
-    printf("usage: %s [-i] [-v] [-n rows=10] [-w widthpercent=50] [-f fontname=Menlo] [-s fontsize=26] [-c highlight=0000FF]\n", name);
+    printf("usage: %s\n", name);
+    printf(" -i           return index of selected element\n");
+    printf(" -v           show choose version\n");
+    printf(" -n [10]      set number of rows\n");
+    printf(" -w [50]      set width of choose window\n");
+    printf(" -f [Menlo]   set font used by choose\n");
+    printf(" -s [26]      set font size used by choose\n");
+    printf(" -c [0000FF]  highlight color for matched string\n");
+    printf(" -b [222222]  background color of selected element\n");
+    printf(" -u           disable underline and use background for matched string\n");
     exit(0);
 }
 
@@ -621,7 +643,9 @@ int main(int argc, const char * argv[]) {
         [NSApp setActivationPolicy: NSApplicationActivationPolicyAccessory];
         
         SDReturnsIndex = NO;
+        SDUnderlineDisabled = NO;
         const char* hexColor = "0000FF";
+        const char* hexBackgroundColor = "222222";
         const char* queryFontName = "Menlo";
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
@@ -632,15 +656,17 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
         
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:n:w:hi")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:hiu")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
                 case 'c': hexColor = optarg; break;
+                case 'b': hexBackgroundColor = optarg; break;
                 case 's': queryFontSize = atoi(optarg); break;
                 case 'n': SDNumRows = atoi(optarg); break;
                 case 'w': SDPercentWidth = atoi(optarg); break;
                 case 'v': SDShowVersion(argv[0]); break;
+                case 'u': SDUnderlineDisabled = YES; break;
                 case '?':
                 case 'h':
                 default:
@@ -652,7 +678,8 @@ int main(int argc, const char * argv[]) {
         
         SDQueryFont = [NSFont fontWithName:[NSString stringWithUTF8String: queryFontName] size:queryFontSize];
         SDHighlightColor = SDColorFromHex([NSString stringWithUTF8String: hexColor]);
-        
+        SDHighlightBackgroundColor = SDColorFromHex([NSString stringWithUTF8String: hexBackgroundColor]);
+
         NSApplicationMain(argc, argv);
     }
     return 0;
