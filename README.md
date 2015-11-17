@@ -1,7 +1,7 @@
 choose
 ------
 
-*The nerdy way to choose stuff*
+*Hybrid string fuzzy matcher that uses both stdin/stdout and a native GUI*
 
 ---
 
