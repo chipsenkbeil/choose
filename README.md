@@ -1,7 +1,7 @@
 choose
 ------
 
-*Hybrid string fuzzy matcher that uses both stdin/stdout and a native GUI*
+*Hybrid string fuzzy matcher that uses both std{in,out} and a native GUI*
 
 ---
 
