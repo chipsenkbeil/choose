@@ -26,7 +26,7 @@ $ brew install choose-gui
 $ ls | choose
 ~~~
 
-## Coming Soon:
+## Coming Soon
 
 - Swift rewrite!
 - Maybe a man-page?
