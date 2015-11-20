@@ -29,7 +29,7 @@ $ ls | choose
 ## Coming Soon:
 
 - Swift rewrite!
-- Man-page maybe?
+- Maybe a man-page?
 
 ## License
 
