@@ -28,7 +28,7 @@ $ ls | choose
 
 ## Coming Soon
 
-- Swift rewrite!
+- Swift rewrite! (in progress on [the 'swift' branch](https://github.com/sdegutis/choose/tree/swift))
 - Maybe a man-page?
 
 ## License
