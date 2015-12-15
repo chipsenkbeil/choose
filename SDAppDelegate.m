@@ -14,6 +14,7 @@ static NSFont* SDQueryFont;
 static int SDNumRows;
 static int SDPercentWidth;
 static BOOL SDUnderlineDisabled;
+static BOOL SDReturnStringOnMismatch;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -456,7 +457,8 @@ static BOOL SDUnderlineDisabled;
 
 - (void) choose {
     if ([self.filteredSortedChoices count] == 0) {
-        [self writeOutput: [self.queryField stringValue]];
+        if (SDReturnStringOnMismatch)
+            [self writeOutput: [self.queryField stringValue]];
         exit(0);
     }
 
@@ -642,6 +644,7 @@ static void usage(const char* name) {
     printf(" -c [0000FF]  highlight color for matched string\n");
     printf(" -b [222222]  background color of selected element\n");
     printf(" -u           disable underline and use background for matched string\n");
+    printf(" -m           return the query string in case it doesn't match any item\n");
     exit(0);
 }
 
@@ -656,6 +659,7 @@ int main(int argc, const char * argv[]) {
         const char* queryFontName = "Menlo";
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
+        SDReturnStringOnMismatch = NO;
         SDPercentWidth = -1;
 
         static SDAppDelegate* delegate;
@@ -663,7 +667,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:hiu")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -674,6 +678,7 @@ int main(int argc, const char * argv[]) {
                 case 'w': SDPercentWidth = atoi(optarg); break;
                 case 'v': SDShowVersion(argv[0]); break;
                 case 'u': SDUnderlineDisabled = YES; break;
+                case 'm': SDReturnStringOnMismatch = YES; break;
                 case '?':
                 case 'h':
                 default:
