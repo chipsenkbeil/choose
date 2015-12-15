@@ -15,6 +15,7 @@ static int SDNumRows;
 static int SDPercentWidth;
 static BOOL SDUnderlineDisabled;
 static BOOL SDReturnStringOnMismatch;
+static const char* SDInputCString;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -605,9 +606,12 @@ static NSColor* SDColorFromHex(NSString* hex) {
 
 #else
 
-    NSFileHandle* stdinHandle = [NSFileHandle fileHandleWithStandardInput];
-    NSData* inputData = [stdinHandle readDataToEndOfFile];
-    NSString* inputStrings = [[[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString* inputStrings = [NSString stringWithUTF8String:SDInputCString];
+    if ([inputStrings length] == 0) {
+        NSFileHandle* stdinHandle = [NSFileHandle fileHandleWithStandardInput];
+        NSData* inputData = [stdinHandle readDataToEndOfFile];
+        inputStrings = [[[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    }
 
     if ([inputStrings length] == 0)
         return nil;
@@ -645,6 +649,7 @@ static void usage(const char* name) {
     printf(" -b [222222]  background color of selected element\n");
     printf(" -u           disable underline and use background for matched string\n");
     printf(" -m           return the query string in case it doesn't match any item\n");
+    printf(" -I [items]   specify the menu items as cmdline options instead of from stdin\n");
     exit(0);
 }
 
@@ -661,13 +666,14 @@ int main(int argc, const char * argv[]) {
         SDNumRows = 10;
         SDReturnStringOnMismatch = NO;
         SDPercentWidth = -1;
+        SDInputCString = "";
 
         static SDAppDelegate* delegate;
         delegate = [[SDAppDelegate alloc] init];
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:I:n:w:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -679,6 +685,7 @@ int main(int argc, const char * argv[]) {
                 case 'v': SDShowVersion(argv[0]); break;
                 case 'u': SDUnderlineDisabled = YES; break;
                 case 'm': SDReturnStringOnMismatch = YES; break;
+                case 'I': SDInputCString = optarg; break;
                 case '?':
                 case 'h':
                 default:
