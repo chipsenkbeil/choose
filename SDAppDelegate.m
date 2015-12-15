@@ -455,8 +455,10 @@ static BOOL SDUnderlineDisabled;
 /******************************************************************************/
 
 - (void) choose {
-    if ([self.filteredSortedChoices count] == 0)
-        [self cancel];
+    if ([self.filteredSortedChoices count] == 0) {
+        [self writeOutput: [self.queryField stringValue]];
+        exit(0);
+    }
 
     if (SDReturnsIndex) {
         SDChoice* choice = [self.filteredSortedChoices objectAtIndex: self.choice];
