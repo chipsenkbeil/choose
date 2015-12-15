@@ -458,9 +458,11 @@ static const char* SDInputCString;
 
 - (void) choose {
     if ([self.filteredSortedChoices count] == 0) {
-        if (SDReturnStringOnMismatch)
+        if (SDReturnStringOnMismatch) {
             [self writeOutput: [self.queryField stringValue]];
-        exit(0);
+            exit(0);
+        }
+        exit(1);
     }
 
     if (SDReturnsIndex) {
