@@ -12,7 +12,7 @@ choose
 - [example vim integration](./choose.vim)
 - [example emacs integration](./choose.el)
 
-![animated screenshot](https://i.imgur.com/1juZQAR.gif)
+![animated screenshot](https://raw.githubusercontent.com/sdegutis/choose/master/sshot/anim.gif)
 
 ## Install
 
