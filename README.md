@@ -1,13 +1,4 @@
-# NOTICE - Looking for Maintainer
-
-If you would like to maintain this repo, please open an issue and I will transfer it to your account.
-
-If there is no maintainer before the month's end, this repo will be archived.
-
----
-
-choose
-------
+# choose
 
 *Fuzzy matcher for OS X that uses both std{in,out} and a native GUI*
 
