@@ -27,7 +27,9 @@ $ ls | choose
 
 ## Roadmap
 
-- [ ] Clean up code and/or port to something easier to work with
+- [ ] Clean up code and/or port to something easier to work with (maybe something that can be platform-agnostic like ReasonML + [Revery](https://github.com/revery-ui/revery)/[Brisk](https://github.com/briskml/brisk)/[Cuite](https://github.com/let-def/cuite)
+- [ ] Move vim to proper plugin structure and/or check desire from community to support
+- [ ] Figure out the state of the emacs plugin (I don't use emacs) and/or check desire from community to support
 - [ ] Write more documentation illustrating extra functionality
 
 ## License
