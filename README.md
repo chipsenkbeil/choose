@@ -11,7 +11,7 @@
 - [example vim integration](./choose.vim)
 - [example emacs integration](./choose.el)
 
-![animated screenshot](https://raw.githubusercontent.com/sdegutis/choose/master/sshot/anim.gif)
+![animated screenshot](https://raw.githubusercontent.com/chipsenkbeil/choose/master/sshot/anim.gif)
 
 ## Install
 
@@ -25,16 +25,17 @@ $ brew install choose-gui
 $ ls | choose
 ~~~
 
-## Coming Soon
+## Roadmap
 
-- Swift rewrite! (in progress on [the 'swift' branch](https://github.com/sdegutis/choose/tree/swift))
-- Maybe a man-page?
+- [ ] Clean up code and/or port to something easier to work with
+- [ ] Write more documentation illustrating extra functionality
 
 ## License
 
 > Released under MIT license.
 >
-> Copyright (c) 2015 Steven Degutis
+> Original work Copyright (c) 2015 Steven Degutis
+> Modified work Copyright (c) 2019 Chip Senkbeil
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
