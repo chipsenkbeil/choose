@@ -35,6 +35,7 @@ $ ls | choose
 > Released under MIT license.
 >
 > Original work Copyright (c) 2015 Steven Degutis
+> 
 > Modified work Copyright (c) 2019 Chip Senkbeil
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy
