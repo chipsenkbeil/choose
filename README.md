@@ -11,7 +11,7 @@
 - [example vim integration](./choose.vim)
 - [example emacs integration](./choose.el)
 
-![animated screenshot](https://raw.githubusercontent.com/chipsenkbeil/choose/master/sshot/anim.gif)
+![Animated Screenshot](/../Assets/screenshots/anim.gif?raw=true "Animated Screenshot")
 
 ## Install
 
