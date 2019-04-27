@@ -1,0 +1,9 @@
+(executable
+    (name Choose)
+    (package Choose)
+    (public_name Choose)
+    (libraries
+        bigarray
+        reglfw
+        Revery
+))

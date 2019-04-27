@@ -1,0 +1,30 @@
+{
+  "name": "choose",
+  "version": "2.0.0",
+  "description": "Rewrite of choose-gui in ReasonML",
+  "license": "MIT",
+  "esy": {
+    "build": "refmterr dune build -p Choose",
+    "buildsInSource": "_build"
+  },
+  "dependencies": {
+    "ocaml": "~4.7.0",
+    "revery": "^0.18.0",
+    "@opam/dune": "1.7.3"
+  },
+  "resolutions": {
+    "@opam/cmdliner": "1.0.2",
+    "@opam/js_of_ocaml": "github:ocsigen/js_of_ocaml:js_of_ocaml.opam#db257ce",
+    "@opam/js_of_ocaml-compiler": "github:ocsigen/js_of_ocaml:js_of_ocaml-compiler.opam#db257ce",
+    "@brisk/brisk-reconciler": "github:briskml/brisk-reconciler#daa00be",
+    "rebez": "github:jchavarri/rebez#46cbc183"
+  },
+  "scripts": {
+   "format": "bash -c \"refmt --in-place *.re\"",
+   "run": "esy x Choose"
+  },
+  "devDependencies": {
+    "ocaml": "~4.7.0",
+    "@opam/merlin": "*"
+  }
+}
