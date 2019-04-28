@@ -57,66 +57,8 @@ let reducer = (action: action, state: state) =>
   | ChangeFilter(filter) => {...state, filter}
   };
 
-module FilterSection = {
-  let component = React.component("FilterSection");
-
-  let createElement = (~children as _, ~currentFilter, ~onPickingFilter, ()) =>
-    component(hooks =>
-      (
-        hooks,
-        <View
-          style=Style.[
-            flexDirection(`Row),
-            width(500),
-            alignItems(`Center),
-            justifyContent(`Center),
-          ]>
-          <Button
-            height=50
-            width=150
-            fontSize=15
-            title={Filter.show(Filter.All)}
-            color={
-              switch (currentFilter) {
-              | Filter.All => Colors.dodgerBlue
-              | _ => Colors.lightSkyBlue
-              }
-            }
-            onClick={() => onPickingFilter(Filter.All)}
-          />
-          <Button
-            height=50
-            width=150
-            fontSize=15
-            title={Filter.show(Completed)}
-            color={
-              switch (currentFilter) {
-              | Completed => Colors.dodgerBlue
-              | _ => Colors.lightSkyBlue
-              }
-            }
-            onClick={() => onPickingFilter(Completed)}
-          />
-          <Button
-            height=50
-            width=150
-            fontSize=15
-            title={Filter.show(NotCompleted)}
-            color={
-              switch (currentFilter) {
-              | NotCompleted => Colors.dodgerBlue
-              | _ => Colors.lightSkyBlue
-              }
-            }
-            onClick={() => onPickingFilter(NotCompleted)}
-          />
-        </View>,
-      )
-    );
-};
-
-module Example = {
-  let component = React.component("TodoMVC");
+module Choose = {
+  let component = React.component("Choose");
 
   let createElement = (~children as _, ()) =>
     component(hooks => {
@@ -144,12 +86,7 @@ module Example = {
             onChange={checked => dispatch(ChangeTaskState(task.id, checked))}
           />
           <Text
-            style=Style.[
-              color(Colors.black),
-              fontFamily("Roboto-Regular.ttf"),
-              fontSize(20),
-              margin(4),
-            ]
+            style=Style.[color(Colors.black), fontSize(20), margin(4)]
             text={task.task}
           />
         </View>;
@@ -180,10 +117,6 @@ module Example = {
             flexDirection(`Column),
             backgroundColor(Colors.white),
           ]>
-          <FilterSection
-            currentFilter=filter
-            onPickingFilter={filter => dispatch(ChangeFilter(filter))}
-          />
           <View style=Style.[flexDirection(`Row)]>
             <Input
               style=Style.[width(400)]
@@ -220,10 +153,26 @@ module Example = {
 };
 
 let init = app => {
-  /* Create a window! */
-  let win = App.createWindow(app, "test");
+  let win =
+    App.createWindow(
+      ~createOptions=
+        WindowCreateOptions.create(
+          ~resizable=false,
+          ~visible=true,
+          ~maximized=false,
+          ~decorated=false,
+          ~width=800,
+          ~height=600,
+          ~backgroundColor=Colors.white,
+          ~vsync=false,
+          ~icon=None,
+          (),
+        ),
+      app,
+      "Choose",
+    );
 
-  let _ = UI.start(win, <Example />);
+  let _ = UI.start(win, <Choose />);
   ();
 };
 
