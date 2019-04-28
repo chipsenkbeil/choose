@@ -19,3 +19,9 @@ Issuing `make uninstall` will remove man pages from appropriate locations and
 Additionally, from the root of the project, you can build the man pages using
 `make docs`, install via `make install-docs`, and uninstall via `make
 uninstall-docs`.
+
+## Installation configuration
+
+For package managers and personal customization, you can override the location
+in which man pages will be installed by explicitly setting the environment
+variable `BASEDIR`, which is set to `/usr/local/share/man` by default.
