@@ -219,4 +219,12 @@ module Example = {
     });
 };
 
-let render = () => <Example />;
+let init = app => {
+  /* Create a window! */
+  let win = App.createWindow(app, "test");
+
+  let _ = UI.start(win, <Example />);
+  ();
+};
+
+App.start(init);
