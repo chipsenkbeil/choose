@@ -64,7 +64,7 @@ typings/
 # esy
 _build/
 _esy/
-esy.lock/
+#esy.lock/
 
 # reason
 *.install
