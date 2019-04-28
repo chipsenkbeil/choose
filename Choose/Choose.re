@@ -153,6 +153,18 @@ module Choose = {
 };
 
 let init = app => {
+  let dimensions: Monitor.size =
+    Monitor.getPrimaryMonitor() |> Monitor.getSize;
+
+  let windowWidth = dimensions.width / 2;
+  let windowHeight = dimensions.height / 2;
+
+  // TODO: Revery doesn't support Compositing/Container at the moment,
+  //       which would be needed for alpha transparency of windows
+  let testColor = Color.rgba(1.0, 1.0, 1.0, 0.1);
+
+  // NOTE: Use decorated=false to not show titlebar and those controls
+  // TODO: Re-enable specifying colors
   let win =
     App.createWindow(
       ~createOptions=
@@ -161,9 +173,9 @@ let init = app => {
           ~visible=true,
           ~maximized=false,
           ~decorated=false,
-          ~width=800,
-          ~height=600,
-          ~backgroundColor=Colors.white,
+          ~width=windowWidth,
+          ~height=windowHeight,
+          ~backgroundColor=testColor,
           ~vsync=false,
           ~icon=None,
           (),
@@ -171,6 +183,12 @@ let init = app => {
       app,
       "Choose",
     );
+
+  // TODO: Enable setting window position explicitly per 
+  //       https://github.com/chipsenkbeil/choose/issues/8
+  let xPosition = (dimensions.width - windowWidth) / 2;
+  let yPosition = (dimensions.height - windowHeight) / 2;
+  Window.setPos(win, xPosition, yPosition);
 
   let _ = UI.start(win, <Choose />);
   ();
