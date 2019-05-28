@@ -2,23 +2,23 @@
 BASEDIR ?= /usr/local/share/man
 
 # Specify targets that aren't actually physical files to create
-.PHONY: clean build install uninstall
+.PHONY: clean build install uninstall help
 
-# [DEFAULT] Build project
-all: build
+all: build ## [DEFAULT] Build project
 
-build:
+help: ## Display help information
+	@printf 'usage: make [target] ...\n\ntargets:\n'
+	@egrep '^(.+)\:\ .*##\ (.+)' ${MAKEFILE_LIST} | sed 's/:.*##/#/' | column -t -c 2 -s '#'
+
+build: ## Builds program
 	@esy
 
-run:
+run: ## Executes program
 	@esy x Choose
 
-# Copy binaries to $BASEDIR
-install:
+install: ## Copy binaries to $BASEDIR
 
-# Remove binaries from $BASEDIR
-uninstall:
+uninstall: ## Remove binaries from $BASEDIR
 
-# Remove all generated binaries
-clean:
+clean: ## Remove all generated binaries
 	@rm -rf _build/
