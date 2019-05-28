@@ -19,6 +19,20 @@
 $ brew install choose-gui
 ```
 
+### Build and Install Documentation
+
+From root of repository, run:
+
+```bash
+make docs
+make install-docs
+```
+
+You can then issue `man choose` to read the manual.
+
+Note that this requires `pandoc` to be installed on your system to build the
+manual page.
+
 ## Usage
 
 ```bash

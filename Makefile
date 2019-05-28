@@ -1,18 +1,22 @@
-.PHONY: docs install-docs uninstall-docs
+.PHONY: docs install-docs uninstall-docs help
 VERSION = $(shell defaults read `pwd`/Info CFBundleVersion)
 APPFILE = choose
 TGZFILE = choose-$(VERSION).tgz
 ZIPFILE = choose-$(VERSION).zip
 
-release: $(TGZFILE) $(ZIPFILE)
+release: $(TGZFILE) $(ZIPFILE) ## Build release files
 
-docs:
+help: ## Display help information
+	@printf 'usage: make [target] ...\n\ntargets:\n'
+	@egrep '^(.+)\:\ .*##\ (.+)' ${MAKEFILE_LIST} | sed 's/:.*##/#/' | column -t -c 2 -s '#'
+
+docs: ## Build documentation
 	@$(MAKE) -C docs
 
-install-docs:
+install-docs: ## Install documentation
 	@$(MAKE) -C docs install
 
-uninstall-docs:
+uninstall-docs: ## Uninstall documentation
 	@$(MAKE) -C docs uninstall
 
 $(APPFILE): SDAppDelegate.m choose.xcodeproj
@@ -26,7 +30,7 @@ $(TGZFILE): $(APPFILE)
 $(ZIPFILE): $(APPFILE)
 	zip -qr $@ $<
 
-clean:
+clean: ## Remove generated files and documentation
 	rm -rf $(APPFILE) $(TGZFILE) $(ZIPFILE)
 	@$(MAKE) -C docs clean
 

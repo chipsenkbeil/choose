@@ -20,3 +20,5 @@ DerivedData
 /choose
 /choose*.zip
 /choose*.tgz
+
+docs/choose.1
