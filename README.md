@@ -19,6 +19,12 @@
 $ brew install choose-gui
 ```
 
+## Build
+
+```bash
+CXXFLAGS+=-stdlib=libc++ cargo build
+```
+
 ### Build and Install Documentation
 
 From root of repository, run:
