@@ -238,7 +238,7 @@ static BOOL SDReturnStringOnMismatch;
         self.window.titlebarAppearsTransparent = YES;
         NSVisualEffectView* blur = [[NSVisualEffectView alloc] initWithFrame: [[self.window contentView] bounds]];
         [blur setAutoresizingMask: NSViewWidthSizable | NSViewHeightSizable ];
-        blur.material = NSVisualEffectMaterialLight;
+        blur.material = NSVisualEffectMaterialMenu;
         blur.state = NSVisualEffectBlendingModeBehindWindow;
         [[self.window contentView] addSubview: blur];
     }
@@ -287,7 +287,7 @@ static BOOL SDReturnStringOnMismatch;
     NSBox* border = [[NSBox alloc] initWithFrame: dividerRect];
     [border setAutoresizingMask: NSViewWidthSizable | NSViewMinYMargin ];
     [border setBoxType: NSBoxCustom];
-    [border setFillColor: [NSColor lightGrayColor]];
+    [border setFillColor: [NSColor systemGrayColor]];
     [border setBorderWidth: 0.0];
     [[self.window contentView] addSubview: border];
 }
@@ -595,6 +595,16 @@ static NSColor* SDColorFromHex(NSString* hex) {
                                      alpha: 1.0];
 }
 
+static char* HexFromSDColor(NSColor* color) {
+    char* buffer = (char*) malloc(6 * sizeof(char));
+    NSColor* c = [color colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    sprintf(buffer, "%2X%2X%2X",
+            (unsigned int) ([c redComponent] * 255.99999),
+            (unsigned int) ([c greenComponent] * 255.99999),
+            (unsigned int) ([c blueComponent] * 255.99999));
+    return buffer;
+}
+
 /******************************************************************************/
 /* Getting input list                                                         */
 /******************************************************************************/
@@ -656,8 +666,8 @@ int main(int argc, const char * argv[]) {
 
         SDReturnsIndex = NO;
         SDUnderlineDisabled = NO;
-        const char* hexColor = "0000FF";
-        const char* hexBackgroundColor = "222222";
+        const char* hexColor = HexFromSDColor(NSColor.systemBlueColor);
+        const char* hexBackgroundColor = HexFromSDColor(NSColor.systemGrayColor);
         const char* queryFontName = "Menlo";
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
