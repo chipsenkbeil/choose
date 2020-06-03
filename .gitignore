@@ -22,3 +22,4 @@ DerivedData
 /choose*.tgz
 
 docs/choose.1
+target/
