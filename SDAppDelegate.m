@@ -596,9 +596,10 @@ static NSColor* SDColorFromHex(NSString* hex) {
 }
 
 static char* HexFromSDColor(NSColor* color) {
-    char* buffer = (char*) malloc(6 * sizeof(char));
+    size_t bufferSize = 6;
+    char* buffer = (char*) malloc(bufferSize * sizeof(char));
     NSColor* c = [color colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-    sprintf(buffer, "%2X%2X%2X",
+    snprintf(buffer, bufferSize, "%2X%2X%2X",
             (unsigned int) ([c redComponent] * 255.99999),
             (unsigned int) ([c greenComponent] * 255.99999),
             (unsigned int) ([c blueComponent] * 255.99999));
