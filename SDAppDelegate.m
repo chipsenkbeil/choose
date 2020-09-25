@@ -596,7 +596,7 @@ static NSColor* SDColorFromHex(NSString* hex) {
 }
 
 static char* HexFromSDColor(NSColor* color) {
-    size_t bufferSize = 6;
+    size_t bufferSize = 7;
     char* buffer = (char*) malloc(bufferSize * sizeof(char));
     NSColor* c = [color colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
     snprintf(buffer, bufferSize, "%2X%2X%2X",
