@@ -43,6 +43,10 @@ $ ls | choose
 
 See [ROADMAP.md](./ROADMAP.md).
 
+## Related Projects
+
+- https://www.hammerspoon.org/docs/hs.chooser.html
+
 ## License
 
 See [MIT LICENSE](./LICENSE).
