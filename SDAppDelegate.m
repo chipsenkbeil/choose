@@ -526,12 +526,22 @@ static BOOL SDReturnStringOnMismatch;
         return YES;
     }
     else if (commandSelector == @selector(moveUp:)) {
-        self.choice = MAX(self.choice - 1, 0);
+        if (self.choice <= 0) {
+            self.choice = [self.filteredSortedChoices count] - 1;
+        } else {
+            self.choice -= 1;
+        }
+        
         [self reflectChoice];
         return YES;
     }
     else if (commandSelector == @selector(moveDown:)) {
-        self.choice = MIN(self.choice + 1, [self.filteredSortedChoices count]-1);
+        if (self.choice >= [self.filteredSortedChoices count] - 1) {
+            self.choice = 0;
+        } else {
+            self.choice += 1;
+        }
+        
         [self reflectChoice];
         return YES;
     }
