@@ -21,7 +21,7 @@ uninstall-docs: ## Uninstall documentation
 
 $(APPFILE): SDAppDelegate.m choose.xcodeproj
 	rm -rf $@
-	xcodebuild clean build > /dev/null
+	xcodebuild -configuration Release clean build > /dev/null
 	cp -R build/Release/choose $@
 
 $(TGZFILE): $(APPFILE)
