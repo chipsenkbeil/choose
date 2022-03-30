@@ -179,6 +179,7 @@ static BOOL SDReturnStringOnMismatch;
 @property NSWindow* window;
 @property NSArray* choices;
 @property NSMutableArray* filteredSortedChoices;
+@property NSMutableArray* filteredSortedChoicesFromFzf;
 @property SDTableView* listTableView;
 @property NSTextField* queryField;
 @property NSInteger choice;
@@ -417,27 +418,30 @@ static BOOL SDReturnStringOnMismatch;
     query = [query lowercaseString];
 
     self.filteredSortedChoices = [self.choices mutableCopy];
+    
+    NSMutableArray *mapped = [NSMutableArray arrayWithCapacity:[self.filteredSortedChoices count]];
+    [self.filteredSortedChoices enumerateObjectsUsingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
+        [mapped addObject:obj.raw];
+    }];
+    NSString * combinedStuff = [mapped componentsJoinedByString:@"\n"];
+    
+    self.filteredSortedChoicesFromFzf = [self executeFzfOnOptions: combinedStuff fzfQuery:query];
+    
+    for (SDChoice* choice in [self.filteredSortedChoices copy]) {
+        BOOL identicalStringFound = NO;
+        for (NSString *someString in self.filteredSortedChoicesFromFzf) {
+            if ([someString isEqualToString:choice.raw]) {
+                identicalStringFound = YES;
+                break;
+            }
+        }
+        if (!identicalStringFound)
+            [self.filteredSortedChoices removeObject: choice];
+    }
 
     // analyze (cache)
     for (SDChoice* choice in self.filteredSortedChoices)
         [choice analyze: query];
-
-    if ([query length] >= 1) {
-
-        // filter out non-matches
-        for (SDChoice* choice in [self.filteredSortedChoices copy]) {
-            if (!choice.hasAllCharacters)
-                [self.filteredSortedChoices removeObject: choice];
-        }
-
-        // sort remainder
-        [self.filteredSortedChoices sortUsingComparator:^NSComparisonResult(SDChoice* a, SDChoice* b) {
-            if (a.score > b.score) return NSOrderedAscending;
-            if (a.score < b.score) return NSOrderedDescending;
-            return NSOrderedSame;
-        }];
-
-    }
 
     // render remainder
     for (SDChoice* choice in self.filteredSortedChoices)
@@ -449,6 +453,40 @@ static BOOL SDReturnStringOnMismatch;
     // push choice back to start
     self.choice = 0;
     [self reflectChoice];
+}
+
+- (NSMutableArray *)executeFzfOnOptions:(NSString *)options fzfQuery:(NSString *)query
+{
+    NSTask *task = [[NSTask alloc] init];
+    [task setLaunchPath:@"/bin/zsh"];
+    
+    NSArray *arguments = [NSArray arrayWithObjects: @"-c",
+                          [NSString stringWithFormat:@"echo \"%@\" | fzf --exact --filter \"%@\"", options, query], nil];
+
+    NSLog(@"run command: %@", options);
+    [task setArguments:arguments];
+
+    NSPipe *pipe = [NSPipe pipe];
+    [task setStandardOutput:pipe];
+    
+    NSPipe *errorPipe = [NSPipe pipe];
+    [task setStandardError:errorPipe];
+
+    NSFileHandle *file = [pipe fileHandleForReading];
+    NSFileHandle *errorFile = [errorPipe fileHandleForReading];
+
+    [task launch];
+
+    NSData *data = [file readDataToEndOfFile];
+    NSData *errorData = [errorFile readDataToEndOfFile];
+
+    NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    NSString *errorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
+    NSLog(@"output of command: %@", output);
+    NSLog(@"error output of command: %@", errorOutput);
+    
+    NSCharacterSet *separator = [NSCharacterSet newlineCharacterSet];
+    return [[output componentsSeparatedByCharactersInSet:separator] copy];
 }
 
 /******************************************************************************/
