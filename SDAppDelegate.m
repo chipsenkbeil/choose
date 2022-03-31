@@ -119,16 +119,18 @@ static BOOL SDReturnStringOnMismatch;
 
     [self.indexSet removeAllIndexes];
 
-    NSUInteger lastPos = [self.normalized length] - 1;
+    NSUInteger itemLength = [self.normalized length];
+    NSUInteger lastPos = 0;
     BOOL foundAll = YES;
-    for (NSInteger i = [query length] - 1; i >= 0; i--) {
+    for (NSInteger i = 0; i < [query length]; i++) {
         unichar qc = [query characterAtIndex: i];
         BOOL found = NO;
-        for (NSInteger i = lastPos; i >= 0; i--) {
-            unichar rc = [self.normalized characterAtIndex: i];
+        for (NSInteger ii = lastPos; ii < itemLength; ii++) {
+            unichar rc = [self.normalized characterAtIndex: ii];
+            
             if (qc == rc) {
-                [self.indexSet addIndex: i];
-                lastPos = i-1;
+                [self.indexSet addIndex: ii];
+                lastPos = ii+1;
                 found = YES;
                 break;
             }
@@ -461,7 +463,7 @@ static BOOL SDReturnStringOnMismatch;
     [task setLaunchPath:@"/bin/zsh"];
     
     NSArray *arguments = [NSArray arrayWithObjects: @"-c",
-                          [NSString stringWithFormat:@"echo \"%@\" | fzf --exact --filter \"%@\"", options, query], nil];
+                          [NSString stringWithFormat:@"echo \"%@\" | fzf --reverse --exact --filter \"%@\"", options, query], nil];
 
     NSLog(@"run command: %@", options);
     [task setArguments:arguments];
