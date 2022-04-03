@@ -60,9 +60,6 @@ static BOOL SDReturnStringOnMismatch;
 @property NSMutableIndexSet* indexSet;
 @property NSMutableAttributedString* displayString;
 
-@property BOOL hasAllCharacters;
-@property int score;
-
 @end
 
 @implementation SDChoice
@@ -83,7 +80,6 @@ static BOOL SDReturnStringOnMismatch;
     // for testing
     [self.displayString deleteCharactersInRange:NSMakeRange(0, [self.displayString length])];
     [[self.displayString mutableString] appendString:self.raw];
-    [[self.displayString mutableString] appendFormat:@" [%d]", self.score];
 #endif
 
 
@@ -114,9 +110,6 @@ static BOOL SDReturnStringOnMismatch;
 
 - (void) analyze:(NSString*)query {
 
-    // TODO: might not need this variable?
-    self.hasAllCharacters = NO;
-
     [self.indexSet removeAllIndexes];
 
     NSUInteger itemLength = [self.normalized length];
@@ -140,33 +133,6 @@ static BOOL SDReturnStringOnMismatch;
             break;
         }
     }
-
-    self.hasAllCharacters = foundAll;
-
-    // skip the rest when it won't be used by the caller
-    if (!self.hasAllCharacters)
-        return;
-
-    // update score
-
-    self.score = 0;
-
-    if ([self.indexSet count] == 0)
-        return;
-
-    __block int lengthScore = 0;
-    __block int numRanges = 0;
-
-    [self.indexSet enumerateRangesUsingBlock:^(NSRange range, BOOL *stop) {
-        numRanges++;
-        lengthScore += (range.length * 100);
-    }];
-
-    lengthScore /= numRanges;
-
-    int percentScore = ((double)[self.indexSet count] / (double)[self.normalized length]) * 100.0;
-
-    self.score = lengthScore + percentScore;
 }
 
 @end
@@ -181,7 +147,6 @@ static BOOL SDReturnStringOnMismatch;
 @property NSWindow* window;
 @property NSArray* choices;
 @property NSMutableArray* filteredSortedChoices;
-@property NSMutableArray* filteredSortedChoicesFromFzf;
 @property SDTableView* listTableView;
 @property NSTextField* queryField;
 @property NSInteger choice;
@@ -198,7 +163,7 @@ static BOOL SDReturnStringOnMismatch;
     NSArray* inputItems = [self getInputItems];
 //    NSLog(@"%ld", [inputItems count]);
 //    NSLog(@"%@", inputItems);
-
+    
     if ([inputItems count] < 1)
         [self cancel];
 
@@ -418,27 +383,23 @@ static BOOL SDReturnStringOnMismatch;
 
 - (void) runQuery:(NSString*)query {
     query = [query lowercaseString];
-
-    self.filteredSortedChoices = [self.choices mutableCopy];
     
-    NSMutableArray *mapped = [NSMutableArray arrayWithCapacity:[self.filteredSortedChoices count]];
-    [self.filteredSortedChoices enumerateObjectsUsingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
+    NSMutableArray *mapped = [NSMutableArray arrayWithCapacity:[self.choices count]];
+    [self.choices enumerateObjectsUsingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
         [mapped addObject:obj.raw];
     }];
     NSString * combinedStuff = [mapped componentsJoinedByString:@"\n"];
+     
+    NSMutableArray* fzfResult = [self executeFzfOnOptions: combinedStuff fzfQuery:query];
+    self.filteredSortedChoices = [NSMutableArray arrayWithCapacity:[fzfResult count]];
     
-    self.filteredSortedChoicesFromFzf = [self executeFzfOnOptions: combinedStuff fzfQuery:query];
-    
-    for (SDChoice* choice in [self.filteredSortedChoices copy]) {
-        BOOL identicalStringFound = NO;
-        for (NSString *someString in self.filteredSortedChoicesFromFzf) {
+    for (NSString *someString in fzfResult) {
+        for (SDChoice* choice in [self.choices copy]) {
             if ([someString isEqualToString:choice.raw]) {
-                identicalStringFound = YES;
+                [self.filteredSortedChoices addObject:choice];
                 break;
             }
         }
-        if (!identicalStringFound)
-            [self.filteredSortedChoices removeObject: choice];
     }
 
     // analyze (cache)
@@ -526,7 +487,7 @@ static BOOL SDReturnStringOnMismatch;
 }
 
 - (void) applicationDidResignActive:(NSNotification *)notification {
-    [self cancel];
+//    [self cancel];
 }
 
 - (void) pickIndex:(NSUInteger)idx {
