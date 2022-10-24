@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		57E707422906A52B00037ED8 /* NSString+Score.m in Sources */ = {isa = PBXBuildFile; fileRef = 57E707412906A52B00037ED8 /* NSString+Score.m */; };
 		94DDE04E19F2B78F001A3B2E /* SDAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 94DDE04D19F2B78F001A3B2E /* SDAppDelegate.m */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		57E707402906A52B00037ED8 /* NSString+Score.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Score.h"; sourceTree = "<group>"; };
+		57E707412906A52B00037ED8 /* NSString+Score.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Score.m"; sourceTree = "<group>"; };
 		9460AB981AB9ECF000DC9A3A /* fakedata.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fakedata.h; sourceTree = "<group>"; };
 		94DDE03E19F2AC4C001A3B2E /* choose */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = choose; sourceTree = BUILT_PRODUCTS_DIR; };
 		94DDE04819F2AC61001A3B2E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -46,6 +49,8 @@
 				94DDE04D19F2B78F001A3B2E /* SDAppDelegate.m */,
 				9460AB981AB9ECF000DC9A3A /* fakedata.h */,
 				94DDE04819F2AC61001A3B2E /* Info.plist */,
+				57E707402906A52B00037ED8 /* NSString+Score.h */,
+				57E707412906A52B00037ED8 /* NSString+Score.m */,
 			);
 			name = choose;
 			sourceTree = "<group>";
@@ -123,6 +128,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				57E707422906A52B00037ED8 /* NSString+Score.m in Sources */,
 				94DDE04E19F2B78F001A3B2E /* SDAppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

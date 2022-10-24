@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <CommonCrypto/CommonDigest.h>
+#import "NSString+Score.h"
 
 #define NSApp [NSApplication sharedApplication]
 
@@ -150,6 +151,8 @@ static BOOL SDReturnStringOnMismatch;
 @property SDTableView* listTableView;
 @property NSTextField* queryField;
 @property NSInteger choice;
+@property(strong) dispatch_source_t debounceTimer;
+
 
 @end
 
@@ -381,6 +384,115 @@ static BOOL SDReturnStringOnMismatch;
 /* Filtering!                                                                 */
 /******************************************************************************/
 
+- (void) runQueryVersion2:(NSString*)query {
+    query = [query lowercaseString];
+    NSCharacterSet *invalidCharacterSet = [query invalidCharacterSet];
+    NSString *decomposedString = [query decomposedStringWithInvalidCharacterSet:invalidCharacterSet];
+    
+    NSMutableArray *mapped = [NSMutableArray arrayWithCapacity:[self.choices count]];
+
+    NSNumber *fuzziness = @(0.8);
+ 
+    [self.choices enumerateObjectsWithOptions:NSEnumerationConcurrent usingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
+        CGFloat fuzzyScore = [query scoreAgainst:obj.raw fuzziness:fuzziness
+                                options:(NSStringScoreOptionNone)
+                    invalidCharacterSet:invalidCharacterSet
+                       decomposedString:decomposedString];
+        
+        if(fuzzyScore >= .17) {
+            [mapped addObject:obj.raw];
+        }
+    }];
+    
+     
+    self.filteredSortedChoices = [NSMutableArray arrayWithCapacity:[mapped count]];
+    
+    for (NSString *someString in mapped) {
+        for (SDChoice* choice in [self.choices copy]) {
+            if ([someString isEqualToString:choice.raw]) {
+                [self.filteredSortedChoices addObject:choice];
+                break;
+            }
+        }
+    }
+
+    // analyze (cache)
+    for (SDChoice* choice in self.filteredSortedChoices)
+        [choice analyze: query];
+
+    // render remainder
+    for (SDChoice* choice in self.filteredSortedChoices)
+        [choice render];
+
+    // show!
+    [self.listTableView reloadData];
+
+    // push choice back to start
+    self.choice = 0;
+    [self reflectChoice];
+}
+
+dispatch_source_t CreateDebounceDispatchTimer(double debounceTime, dispatch_queue_t queue, dispatch_block_t block) {
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+    
+    if (timer) {
+        dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, debounceTime * NSEC_PER_SEC), DISPATCH_TIME_FOREVER, (1ull * NSEC_PER_SEC) / 10);
+        dispatch_source_set_event_handler(timer, block);
+        dispatch_resume(timer);
+    }
+    
+    return timer;
+}
+
+
+- (void) runQueryDebounced:(NSString*)query {
+    if (self.debounceTimer != nil) {
+            dispatch_source_cancel(self.debounceTimer);
+            self.debounceTimer = nil;
+        }
+        
+        dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+        double secondsToThrottle = .300f;
+        self.debounceTimer = CreateDebounceDispatchTimer(secondsToThrottle, queue, ^{
+            [self runQuery3:query];
+            
+                dispatch_async(dispatch_get_main_queue(), ^{
+         [self.listTableView reloadData];
+    });
+
+        });
+}
+
+- (void) runQuery3:(NSString*)query {
+    query = [query lowercaseString];
+    
+    NSMutableString * combinedStuff = [NSMutableString string];
+
+    [self.choices enumerateObjectsWithOptions:(NSEnumerationConcurrent) usingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
+        [combinedStuff appendString:[NSString stringWithFormat:@"%@\n", obj.raw]];
+    }];
+    [combinedStuff deleteCharactersInRange:NSMakeRange([combinedStuff length]-1, 1)];
+
+    NSMutableArray* fzfResult = [self executeFzfOnOptions: combinedStuff fzfQuery:query];
+    self.filteredSortedChoices = [NSMutableArray arrayWithCapacity:[fzfResult count]];
+    
+    for (NSString *someString in fzfResult) {
+//        [self.filteredSortedChoices addObject: [[SDChoice alloc] initWithString: someString]];
+        SDChoice* choice = [[SDChoice alloc] initWithString:someString];
+        [self.filteredSortedChoices addObject:choice];
+        [choice analyze: query];
+        [choice render];
+    }
+
+//    for (SDChoice* choice in self.filteredSortedChoices) {
+//        [choice analyze: query];
+//        [choice render];
+//    }
+
+    self.choice = 0;
+    [self reflectChoice];
+}
+
 - (void) runQuery:(NSString*)query {
     query = [query lowercaseString];
     
@@ -432,21 +544,21 @@ static BOOL SDReturnStringOnMismatch;
     NSPipe *pipe = [NSPipe pipe];
     [task setStandardOutput:pipe];
     
-    NSPipe *errorPipe = [NSPipe pipe];
-    [task setStandardError:errorPipe];
+//    NSPipe *errorPipe = [NSPipe pipe];
+//    [task setStandardError:errorPipe];
 
     NSFileHandle *file = [pipe fileHandleForReading];
-    NSFileHandle *errorFile = [errorPipe fileHandleForReading];
+//    NSFileHandle *errorFile = [errorPipe fileHandleForReading];
 
     [task launch];
 
     NSData *data = [file readDataToEndOfFile];
-    NSData *errorData = [errorFile readDataToEndOfFile];
+//    NSData *errorData = [errorFile readDataToEndOfFile];
 
     NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSString *errorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
+//    NSString *errorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
     NSLog(@"output of command: %@", output);
-    NSLog(@"error output of command: %@", errorOutput);
+//    NSLog(@"error output of command: %@", errorOutput);
     
     NSCharacterSet *separator = [NSCharacterSet newlineCharacterSet];
     return [[output componentsSeparatedByCharactersInSet:separator] copy];
@@ -561,7 +673,8 @@ static BOOL SDReturnStringOnMismatch;
 }
 
 - (void) controlTextDidChange:(NSNotification *)obj {
-    [self runQuery: [self.queryField stringValue]];
+    [self runQueryDebounced: [self.queryField stringValue]];
+    
 }
 
 - (IBAction) selectAll:(id)sender {
