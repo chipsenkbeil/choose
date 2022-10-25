@@ -187,6 +187,8 @@ static BOOL SDReturnStringOnMismatch;
 
     // these even work inside NSAlert, so start them later
     [self setupKeyboardShortcuts];
+    
+    [self.listTableView reloadData];
 }
 
 /******************************************************************************/
@@ -417,7 +419,7 @@ dispatch_source_t CreateDebounceDispatchTimer(double debounceTime, dispatch_queu
     
     NSMutableString * combinedStuff = [NSMutableString string];
 
-    [self.choices enumerateObjectsWithOptions:(NSEnumerationConcurrent) usingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
+    [self.choices enumerateObjectsUsingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
         [combinedStuff appendString:[NSString stringWithFormat:@"%@\n", obj.raw]];
     }];
     [combinedStuff deleteCharactersInRange:NSMakeRange([combinedStuff length]-1, 1)];
@@ -426,6 +428,8 @@ dispatch_source_t CreateDebounceDispatchTimer(double debounceTime, dispatch_queu
     self.filteredSortedChoices = [NSMutableArray arrayWithCapacity:[fzfResult count]];
     
     for (NSString *someString in fzfResult) {
+        if([someString length] == 0) continue;
+        
         SDChoice* choice = [[SDChoice alloc] initWithString:someString];
         [self.filteredSortedChoices addObject:choice];
         [choice analyze: query];
