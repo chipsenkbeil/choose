@@ -16,7 +16,7 @@
 ## Install
 
 ```bash
-$ brew install choose-gui
+brew install choose-gui
 ```
 
 ### Build and Install Documentation
