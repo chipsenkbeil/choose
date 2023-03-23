@@ -61,9 +61,6 @@ static BOOL SDReturnStringOnMismatch;
 @property NSMutableIndexSet* indexSet;
 @property NSMutableAttributedString* displayString;
 
-@property BOOL hasAllCharacters;
-@property int score;
-
 @end
 
 @implementation SDChoice
@@ -84,7 +81,6 @@ static BOOL SDReturnStringOnMismatch;
     // for testing
     [self.displayString deleteCharactersInRange:NSMakeRange(0, [self.displayString length])];
     [[self.displayString mutableString] appendString:self.raw];
-    [[self.displayString mutableString] appendFormat:@" [%d]", self.score];
 #endif
 
 
@@ -115,21 +111,20 @@ static BOOL SDReturnStringOnMismatch;
 
 - (void) analyze:(NSString*)query {
 
-    // TODO: might not need this variable?
-    self.hasAllCharacters = NO;
-
     [self.indexSet removeAllIndexes];
 
-    NSUInteger lastPos = [self.normalized length] - 1;
+    NSUInteger itemLength = [self.normalized length];
+    NSUInteger lastPos = 0;
     BOOL foundAll = YES;
-    for (NSInteger i = [query length] - 1; i >= 0; i--) {
+    for (NSInteger i = 0; i < [query length]; i++) {
         unichar qc = [query characterAtIndex: i];
         BOOL found = NO;
-        for (NSInteger i = lastPos; i >= 0; i--) {
-            unichar rc = [self.normalized characterAtIndex: i];
+        for (NSInteger ii = lastPos; ii < itemLength; ii++) {
+            unichar rc = [self.normalized characterAtIndex: ii];
+            
             if (qc == rc) {
-                [self.indexSet addIndex: i];
-                lastPos = i-1;
+                [self.indexSet addIndex: ii];
+                lastPos = ii+1;
                 found = YES;
                 break;
             }
@@ -139,33 +134,6 @@ static BOOL SDReturnStringOnMismatch;
             break;
         }
     }
-
-    self.hasAllCharacters = foundAll;
-
-    // skip the rest when it won't be used by the caller
-    if (!self.hasAllCharacters)
-        return;
-
-    // update score
-
-    self.score = 0;
-
-    if ([self.indexSet count] == 0)
-        return;
-
-    __block int lengthScore = 0;
-    __block int numRanges = 0;
-
-    [self.indexSet enumerateRangesUsingBlock:^(NSRange range, BOOL *stop) {
-        numRanges++;
-        lengthScore += (range.length * 100);
-    }];
-
-    lengthScore /= numRanges;
-
-    int percentScore = ((double)[self.indexSet count] / (double)[self.normalized length]) * 100.0;
-
-    self.score = lengthScore + percentScore;
 }
 
 @end
@@ -183,6 +151,8 @@ static BOOL SDReturnStringOnMismatch;
 @property SDTableView* listTableView;
 @property NSTextField* queryField;
 @property NSInteger choice;
+@property(strong) dispatch_source_t debounceTimer;
+
 
 @end
 
@@ -196,7 +166,7 @@ static BOOL SDReturnStringOnMismatch;
     NSArray* inputItems = [self getInputItems];
 //    NSLog(@"%ld", [inputItems count]);
 //    NSLog(@"%@", inputItems);
-
+    
     if ([inputItems count] < 1)
         [self cancel];
 
@@ -218,6 +188,8 @@ static BOOL SDReturnStringOnMismatch;
 
     // these even work inside NSAlert, so start them later
     [self setupKeyboardShortcuts];
+    
+    [self.listTableView reloadData];
 }
 
 /******************************************************************************/
@@ -415,42 +387,93 @@ static BOOL SDReturnStringOnMismatch;
 /* Filtering!                                                                 */
 /******************************************************************************/
 
+dispatch_source_t CreateDebounceDispatchTimer(double debounceTime, dispatch_queue_t queue, dispatch_block_t block) {
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+    
+    if (timer) {
+        dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, debounceTime * NSEC_PER_SEC), DISPATCH_TIME_FOREVER, (1ull * NSEC_PER_SEC) / 10);
+        dispatch_source_set_event_handler(timer, block);
+        dispatch_resume(timer);
+    }
+    
+    return timer;
+}
+
+- (void) runQueryDebounced:(NSString*)query {
+    if (self.debounceTimer != nil) {
+            dispatch_source_cancel(self.debounceTimer);
+            self.debounceTimer = nil;
+        }
+        
+        dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+        double secondsToThrottle = .300f;
+        self.debounceTimer = CreateDebounceDispatchTimer(secondsToThrottle, queue, ^{
+            [self runQuery:query];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.listTableView reloadData];
+            });
+        });
+}
+
 - (void) runQuery:(NSString*)query {
     query = [query lowercaseString];
+    
+    NSMutableString * combinedStuff = [NSMutableString string];
 
-    self.filteredSortedChoices = [self.choices mutableCopy];
+    [self.choices enumerateObjectsUsingBlock:^(SDChoice *obj, NSUInteger idx, BOOL *stop) {
+        [combinedStuff appendString:[NSString stringWithFormat:@"%@\n", obj.raw]];
+    }];
+    [combinedStuff deleteCharactersInRange:NSMakeRange([combinedStuff length]-1, 1)];
 
-    // analyze (cache)
-    for (SDChoice* choice in self.filteredSortedChoices)
+    NSMutableArray* fzfResult = [self executeFzfOnOptions: combinedStuff fzfQuery:query];
+    self.filteredSortedChoices = [NSMutableArray arrayWithCapacity:[fzfResult count]];
+    
+    for (NSString *someString in fzfResult) {
+        if([someString length] == 0) continue;
+        
+        SDChoice* choice = [[SDChoice alloc] initWithString:someString];
+        [self.filteredSortedChoices addObject:choice];
         [choice analyze: query];
-
-    if ([query length] >= 1) {
-
-        // filter out non-matches
-        for (SDChoice* choice in [self.filteredSortedChoices copy]) {
-            if (!choice.hasAllCharacters)
-                [self.filteredSortedChoices removeObject: choice];
-        }
-
-        // sort remainder
-        [self.filteredSortedChoices sortUsingComparator:^NSComparisonResult(SDChoice* a, SDChoice* b) {
-            if (a.score > b.score) return NSOrderedAscending;
-            if (a.score < b.score) return NSOrderedDescending;
-            return NSOrderedSame;
-        }];
-
+        [choice render];
     }
 
-    // render remainder
-    for (SDChoice* choice in self.filteredSortedChoices)
-        [choice render];
-
-    // show!
-    [self.listTableView reloadData];
-
-    // push choice back to start
     self.choice = 0;
     [self reflectChoice];
+}
+
+- (NSMutableArray *)executeFzfOnOptions:(NSString *)options fzfQuery:(NSString *)query
+{
+    NSTask *task = [[NSTask alloc] init];
+    [task setLaunchPath:@"/bin/zsh"];
+    
+    NSArray *arguments = [NSArray arrayWithObjects: @"-c",
+                          [NSString stringWithFormat:@"echo \"%@\" | fzf --reverse --exact --filter \"%@\"", options, query], nil];
+
+    NSLog(@"run command: %@", options);
+    [task setArguments:arguments];
+
+    NSPipe *pipe = [NSPipe pipe];
+    [task setStandardOutput:pipe];
+    
+//    NSPipe *errorPipe = [NSPipe pipe];
+//    [task setStandardError:errorPipe];
+
+    NSFileHandle *file = [pipe fileHandleForReading];
+//    NSFileHandle *errorFile = [errorPipe fileHandleForReading];
+
+    [task launch];
+
+    NSData *data = [file readDataToEndOfFile];
+//    NSData *errorData = [errorFile readDataToEndOfFile];
+
+    NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+//    NSString *errorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
+    NSLog(@"output of command: %@", output);
+//    NSLog(@"error output of command: %@", errorOutput);
+    
+    NSCharacterSet *separator = [NSCharacterSet newlineCharacterSet];
+    return [[output componentsSeparatedByCharactersInSet:separator] copy];
 }
 
 /******************************************************************************/
@@ -488,7 +511,7 @@ static BOOL SDReturnStringOnMismatch;
 }
 
 - (void) applicationDidResignActive:(NSNotification *)notification {
-    [self cancel];
+//    [self cancel];
 }
 
 - (void) pickIndex:(NSUInteger)idx {
@@ -562,7 +585,8 @@ static BOOL SDReturnStringOnMismatch;
 }
 
 - (void) controlTextDidChange:(NSNotification *)obj {
-    [self runQuery: [self.queryField stringValue]];
+    [self runQueryDebounced: [self.queryField stringValue]];
+    
 }
 
 - (IBAction) selectAll:(id)sender {
