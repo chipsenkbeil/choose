@@ -415,7 +415,7 @@ static BOOL SDReturnStringOnMismatch;
 /* Filtering!                                                                 */
 /******************************************************************************/
 
-- (void) runQuery:(NSString*)query {
+- (void) doQuery:(NSString*)query {
     query = [query lowercaseString];
 
     self.filteredSortedChoices = [self.choices mutableCopy];
@@ -440,6 +440,11 @@ static BOOL SDReturnStringOnMismatch;
         }];
 
     }
+}
+
+
+- (void) runQuery:(NSString*)query {
+    [self doQuery: query];
 
     // render remainder
     for (SDChoice* choice in self.filteredSortedChoices)
@@ -671,6 +676,17 @@ static void usage(const char* name) {
     printf(" -u           disable underline and use background for matched string\n");
     printf(" -m           return the query string in case it doesn't match any item\n");
     printf(" -p           defines a prompt to be displayed when query field is empty\n");
+    printf(" -o           given a query, outputs results to standard output\n");
+    exit(0);
+}
+
+static void queryStdout(SDAppDelegate* delegate, const char* query) {
+    delegate.choices = [delegate choicesFromInputItems: [delegate getInputItems]];
+    [delegate doQuery: [NSString stringWithUTF8String: query]];
+
+    for (SDChoice* choice in delegate.filteredSortedChoices) 
+        printf("%s\n", [choice.raw UTF8String]);
+
     exit(0);
 }
 
@@ -694,7 +710,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -707,6 +723,7 @@ int main(int argc, const char * argv[]) {
                 case 'u': SDUnderlineDisabled = YES; break;
                 case 'm': SDReturnStringOnMismatch = YES; break;
                 case 'p': queryPromptString = optarg; break;
+                case 'o': queryStdout(delegate, optarg); break;
                 case '?':
                 case 'h':
                 default:
