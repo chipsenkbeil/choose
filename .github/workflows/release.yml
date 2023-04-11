@@ -25,6 +25,11 @@ jobs:
         run: |
           shasum -a 256 choose > choose.sha256sum
           echo "SHA_CHECKSUM=$(cat choose.sha256sum)" >> $GITHUB_ENV
+      - name: Determine git tag
+        if: github.event_name == 'push'
+        run: |
+          TAG_NAME=${{ github.ref }}
+          echo "TAG_VERSION=${TAG_NAME#refs/tags/}" >> $GITHUB_ENV
       - name: Get Changelog Entry
         id: changelog
         uses: mindsers/changelog-reader-action@v2
@@ -34,7 +39,7 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
-          name: choose ${{ env.TAG_NAME }}
+          name: choose ${{ env.TAG_VERSION }}
           fail_on_unmatched_files: true
           target_commitish: ${{ github.sha }}
           draft: false
