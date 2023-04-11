@@ -16,9 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build universal binary 
-        run: |
-          make release
-          strip choose
+        run: make release
       - name: Verify binary runs
         run: ./choose -v
       - name: Generate SHA256 checksum
