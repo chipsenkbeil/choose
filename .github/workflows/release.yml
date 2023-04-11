@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+-**
+
+jobs:
+  macos:
+    name: "Build release on MacOS"
+    runs-on: macos-12
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build universal binary 
+        run: |
+          make release
+          strip choose
+      - name: Generate SHA256 checksum
+        run: |
+          sha256sum choose > choose.sha256sum
+          echo "SHA_CHECKSUM=$(cat choose.sha256sum)" >> $GITHUB_ENV
+      - name: Get Changelog Entry
+        id: changelog
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          version: ${{ env.TAG_VERSION }}
+          path: "./CHANGELOG.md"
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          name: choose ${{ env.TAG_NAME }}
+          fail_on_unmatched_files: true
+          target_commitish: ${{ github.sha }}
+          draft: false
+          prerelease: ${{ steps.check-tag.outputs.match == 'true' }}
+          files: |
+            choose
+            choose.sha256sum
+          body: |
+            ## Release Notes
+            ${{ steps.changelog.outputs.changes }}
+            ## SHA256 Checksum
+            ```
+            ${{ env.SHA_CHECKSUM }}
+            ```

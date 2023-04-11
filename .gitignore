@@ -18,6 +18,8 @@ DerivedData
 .idea/
 
 /choose
+/choose-x86_64
+/choose-arm64
 /choose*.zip
 /choose*.tgz
 

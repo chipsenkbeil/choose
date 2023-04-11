@@ -22,18 +22,33 @@ uninstall-docs: ## Uninstall documentation
 	@$(MAKE) -C docs uninstall
 
 clean: ## Remove generated files, packages, and documentation
-	rm -rf $(APPFILE) $(TGZFILE) $(ZIPFILE)
+	rm -rf $(APPFILE) $(APPFILE)-x86_64 $(APPFILE)-arm64 $(TGZFILE) $(ZIPFILE)
 	@$(MAKE) -C docs clean
 
 ###############################################################################
 # INTERNAL
 ###############################################################################
 
-# Build the binary using APPFILE as the name, placing it in the current
-# directory of the project (e.g. place `choose` binary at root)
-$(APPFILE): SDAppDelegate.m choose.xcodeproj
+# Build a universal binary
+$(APPFILE): $(APPFILE)-x86_64 $(APPFILE)-arm64
+	lipo -create -output $@ $^
+
+# Explicitly build an x86_64 version of choose
+$(APPFILE)-x86_64: SDAppDelegate.m choose.xcodeproj
 	rm -rf $@
-	xcodebuild -configuration Release clean build > /dev/null
+	xcodebuild \
+		-arch x86_64 \
+		-configuration Release \
+		clean build > /dev/null
+	cp -R build/Release/choose $@
+
+# Explicitly build an arm64 version of choose
+$(APPFILE)-arm64: SDAppDelegate.m choose.xcodeproj
+	rm -rf $@
+	xcodebuild \
+		-arch arm64 \
+		-configuration Release \
+		clean build > /dev/null
 	cp -R build/Release/choose $@
 
 # Build a tar.gz containing the binary
