@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.3] - 2023-04-10
+## [1.3.0] - 2023-04-10
 
 * Build color codes using snprintf for memory safety (#21)
 * Increment bufferSize to account for NUL terminating byte (#22)
