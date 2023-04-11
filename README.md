@@ -1,5 +1,7 @@
 # choose
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/chipsenkbeil/choose)
+
 *Fuzzy matcher for OS X that uses both std{in,out} and a native GUI*
 
 ---
@@ -14,6 +16,16 @@
 ![Animated Screenshot](/../Assets/screenshots/anim.gif?raw=true "Animated Screenshot")
 
 ## Install
+
+For the latest release, go to [the releases
+section](https://github.com/chipsenkbeil/choose/releases) and download the
+binary.
+
+### Homebrew installation
+
+> Keep in mind that we do not maintain the homebrew formula here! So check the
+> version you have via `choose -v` and compare it to the latest version in [the
+> releases section](https://github.com/chipsenkbeil/choose/releases) .
 
 ```bash
 brew install choose-gui
@@ -38,14 +50,6 @@ manual page.
 ```bash
 $ ls | choose
 ```
-
-## Roadmap
-
-See [ROADMAP.md](./ROADMAP.md).
-
-## Related Projects
-
-- https://www.hammerspoon.org/docs/hs.chooser.html
 
 ## License
 
