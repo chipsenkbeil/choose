@@ -19,9 +19,11 @@ jobs:
         run: |
           make release
           strip choose
+      - name: Verify binary runs
+        run: ./choose -v
       - name: Generate SHA256 checksum
         run: |
-          sha256sum choose > choose.sha256sum
+          shasum -a 256 choose > choose.sha256sum
           echo "SHA_CHECKSUM=$(cat choose.sha256sum)" >> $GITHUB_ENV
       - name: Get Changelog Entry
         id: changelog
