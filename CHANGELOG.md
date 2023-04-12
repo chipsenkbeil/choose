@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2023-04-11
+
+* Bump `MACOSX_DEPLOYMENT_TARGET` from `10.10` to `10.13` as Xcode 14.3+ only
+  supports `10.13` and higher
+
 ## [1.3.0] - 2023-04-10
 
 * Build color codes using snprintf for memory safety (#21)
