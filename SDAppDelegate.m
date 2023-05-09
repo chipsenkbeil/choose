@@ -227,13 +227,16 @@ static BOOL SDReturnStringOnMismatch;
 - (void) setupWindow:(NSRect)winRect {
     BOOL usingYosemite = (NSClassFromString(@"NSVisualEffectView") != nil);
 
-    NSUInteger styleMask = usingYosemite ? (NSFullSizeContentViewWindowMask | NSTitledWindowMask) : NSBorderlessWindowMask;
+    NSUInteger styleMask = usingYosemite ? (NSFullSizeContentViewWindowMask | NSTitledWindowMask) : NSWindowStyleMaskBorderless;
     self.window = [[SDMainWindow alloc] initWithContentRect: winRect
                                                   styleMask: styleMask
                                                     backing: NSBackingStoreBuffered
                                                       defer: NO];
 
     [self.window setDelegate: self];
+    [self.window setTitle:@"choose"];
+    [self.window setLevel:NSFloatingWindowLevel];
+
 
     if (usingYosemite) {
         self.window.titlebarAppearsTransparent = YES;
@@ -538,7 +541,7 @@ static BOOL SDReturnStringOnMismatch;
         } else {
             self.choice -= 1;
         }
-        
+
         [self reflectChoice];
         return YES;
     }
@@ -548,7 +551,7 @@ static BOOL SDReturnStringOnMismatch;
         } else {
             self.choice += 1;
         }
-        
+
         [self reflectChoice];
         return YES;
     }
