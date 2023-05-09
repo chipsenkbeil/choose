@@ -234,6 +234,8 @@ static BOOL SDReturnStringOnMismatch;
 
     [self.window setDelegate: self];
     [self.window setTitle:@"choose"];
+    [self.window setLevel:NSFloatingWindowLevel];
+
 
     if (usingYosemite) {
         self.window.titlebarAppearsTransparent = YES;
