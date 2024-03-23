@@ -50,14 +50,17 @@ manual page.
 ### List the content from current directory
 
 ```bash
-$ ls | choose
+ls | choose
 ```
 
 ### Open apps from the applications directories
 
 ```bash
-$ ls /Applications/ /Applications/Utilities/ /System/Applications/ /System/Applications/Utilities/ | \
-$ grep '\.app$' | sed 's/\.app$//g' | choose | xargs -I {} open -a "{}.app"
+ls /Applications/ /Applications/Utilities/ /System/Applications/ /System/Applications/Utilities/ | \
+    grep '\.app$' | \
+    sed 's/\.app$//g' | \
+    choose | \
+    xargs -I {} open -a "{}.app"
 ```
 
 ## License
