@@ -463,6 +463,23 @@ static BOOL SDReturnStringOnMismatch;
 /******************************************************************************/
 
 - (void) choose {
+    NSString *inputText = [self.queryField stringValue];
+    
+    // Check if the input is a valid path (file or directory)
+    BOOL isDir;
+    BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:inputText isDirectory:&isDir];
+    
+    if (exists) {
+        if (isDir) {
+            // If it's a directory, open it in Finder
+            [[NSWorkspace sharedWorkspace] openFile:inputText];
+        } else {
+            // If it's a file, open it with the default application
+            [[NSWorkspace sharedWorkspace] openFile:inputText];
+        }
+        exit(0);
+    }
+    
     if ([self.filteredSortedChoices count] == 0) {
         if (SDReturnStringOnMismatch) {
             [self writeOutput: [self.queryField stringValue]];
