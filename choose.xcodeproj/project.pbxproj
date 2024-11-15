@@ -267,7 +267,7 @@
 				94DDE04419F2AC4C001A3B2E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		94DDE04519F2AC4C001A3B2E /* Build configuration list for PBXNativeTarget "choose" */ = {
 			isa = XCConfigurationList;
@@ -276,7 +276,7 @@
 				94DDE04719F2AC4C001A3B2E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
