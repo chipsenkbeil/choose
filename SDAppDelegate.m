@@ -192,33 +192,75 @@ static BOOL SDReturnStringOnMismatch;
 /* Starting the app                                                           */
 /******************************************************************************/
 
-- (void) applicationDidFinishLaunching:(NSNotification *)notification {
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
     NSArray* inputItems = [self getInputItems];
-//    NSLog(@"%ld", [inputItems count]);
-//    NSLog(@"%@", inputItems);
 
-    if ([inputItems count] < 1)
+    if ([inputItems count] < 1) {
         [self cancel];
+    }
 
-    [NSApp activateIgnoringOtherApps: YES];
+    [NSApp activateIgnoringOtherApps:YES];
 
-    self.choices = [self choicesFromInputItems: inputItems];
+    self.choices = [self choicesFromInputItems:inputItems];
 
     NSRect winRect, textRect, dividerRect, listRect;
-    [self getFrameForWindow: &winRect queryField: &textRect divider: &dividerRect tableView: &listRect];
+    [self getFrameForWindow:&winRect queryField:&textRect divider:&dividerRect tableView:&listRect];
 
-    [self setupWindow: winRect];
-    [self setupQueryField: textRect];
-    [self setupDivider: dividerRect];
-    [self setupResultsTable: listRect];
-    [self runQuery: @""];
+    [self setupWindow:winRect];
+    [self setupQueryField:textRect];
+    [self setupDivider:dividerRect];
+    [self setupResultsTable:listRect];
+    [self runQuery:@""];
     [self resizeWindow];
     [self.window center];
-    [self.window makeKeyAndOrderFront: nil];
+    [self.window makeKeyAndOrderFront:nil];
 
-    // these even work inside NSAlert, so start them later
+    // Setup menu for copy and paste support
+    NSMenu *mainMenu = [[NSMenu alloc] initWithTitle:@"MainMenu"];
+    NSMenuItem *editMenuItem = [[NSMenuItem alloc] initWithTitle:@"Edit" action:nil keyEquivalent:@""];
+    [mainMenu addItem:editMenuItem];
+    NSMenu *editMenu = [[NSMenu alloc] initWithTitle:@"Edit"];
+    [editMenuItem setSubmenu:editMenu];
+
+    // Add copy action
+    NSMenuItem *copyItem = [[NSMenuItem alloc] initWithTitle:@"Copy"
+                                                      action:@selector(copy:)
+                                               keyEquivalent:@"c"];
+    [copyItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
+    [editMenu addItem:copyItem];
+
+    // Add paste action
+    NSMenuItem *pasteItem = [[NSMenuItem alloc] initWithTitle:@"Paste"
+                                                       action:@selector(paste:)
+                                                keyEquivalent:@"v"];
+    [pasteItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
+    [editMenu addItem:pasteItem];
+
+    [NSApp setMainMenu:mainMenu];
+
     [self setupKeyboardShortcuts];
 }
+
+/******************************************************************************/
+/* Copy/Paste action to support Command + V                                        */
+/******************************************************************************/
+
+- (void)paste:(id)sender {
+    // Ensure the query field is the first responder so it can receive the paste action
+    if ([self.queryField acceptsFirstResponder]) {
+        [self.queryField becomeFirstResponder];
+        [[self.queryField currentEditor] paste:nil];
+    }
+}
+
+- (void)copy:(id)sender {
+    // Ensure the query field is the first responder so it can respond to the copy action
+    if ([self.queryField acceptsFirstResponder]) {
+        [self.queryField becomeFirstResponder];
+        [[self.queryField currentEditor] copy:nil];
+    }
+}
+
 
 /******************************************************************************/
 /* Setting up GUI elements                                                    */
@@ -570,16 +612,42 @@ static BOOL SDReturnStringOnMismatch;
         return YES;
     }
     else if (commandSelector == @selector(insertTab:)) {
-        [self.queryField setStringValue: [[self.filteredSortedChoices objectAtIndex: self.choice] raw]];
-        [[self.queryField currentEditor] setSelectedRange: NSMakeRange(self.queryField.stringValue.length, 0)];
+        // Path auto-completion with Tab
+        NSString *currentPath = [self.queryField stringValue];
+        NSString *expandedPath = [currentPath stringByExpandingTildeInPath];
+        NSError *error = nil;
+        NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[expandedPath stringByDeletingLastPathComponent] error:&error];
+        
+        BOOL autoCompleted = NO;
+        if (!error && contents) {
+            NSString *lastComponent = [currentPath lastPathComponent];
+            for (NSString *item in contents) {
+                if ([item hasPrefix:lastComponent]) {
+                    NSString *completedPath = [[expandedPath stringByDeletingLastPathComponent] stringByAppendingPathComponent:item];
+                    [self.queryField setStringValue:completedPath];
+                    autoCompleted = YES;
+                    break;
+                }
+            }
+        }
+        
+        if (!autoCompleted) {
+            // If no auto-completion was possible, fallback to the original Tab functionality
+            [self.queryField setStringValue:[[self.filteredSortedChoices objectAtIndex:self.choice] raw]];
+            [[self.queryField currentEditor] setSelectedRange:NSMakeRange(self.queryField.stringValue.length, 0)];
+        }
         return YES;
     }
     else if (commandSelector == @selector(deleteForward:)) {
         if ([[self.queryField stringValue] length] == 0)
             [self cancel];
     }
+    else if (commandSelector == @selector(paste:)) {
+        // Handle paste with Ctrl + V
+        [textView paste: nil];
+        return YES;
+    }
 
-//    NSLog(@"[%@]", NSStringFromSelector(commandSelector));
     return NO;
 }
 
