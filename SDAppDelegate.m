@@ -12,6 +12,7 @@ static NSColor* SDHighlightBackgroundColor;
 static BOOL SDReturnsIndex;
 static NSFont* SDQueryFont;
 static NSString* PromptText;
+static NSString* InitialQuery;
 static int SDNumRows;
 static int SDPercentWidth;
 static BOOL SDUnderlineDisabled;
@@ -211,7 +212,7 @@ static BOOL SDReturnStringOnMismatch;
     [self setupQueryField: textRect];
     [self setupDivider: dividerRect];
     [self setupResultsTable: listRect];
-    [self runQuery: @""];
+    [self runQuery: self.queryField.stringValue];
     [self resizeWindow];
     [self.window center];
     [self.window makeKeyAndOrderFront: nil];
@@ -263,6 +264,7 @@ static BOOL SDReturnStringOnMismatch;
     self.queryField = [[NSTextField alloc] initWithFrame: textRect];
     [self.queryField setAutoresizingMask: NSViewWidthSizable | NSViewMinYMargin ];
     [self.queryField setDelegate: self];
+    [self.queryField setStringValue: InitialQuery];
     [self.queryField setBezelStyle: NSTextFieldSquareBezel];
     [self.queryField setBordered: NO];
     [self.queryField setDrawsBackground: NO];
@@ -676,6 +678,7 @@ static void usage(const char* name) {
     printf(" -u           disable underline and use background for matched string\n");
     printf(" -m           return the query string in case it doesn't match any item\n");
     printf(" -p           defines a prompt to be displayed when query field is empty\n");
+    printf(" -q           defines initial query to start with (empty by default)\n");
     printf(" -o           given a query, outputs results to standard output\n");
     exit(0);
 }
@@ -700,6 +703,7 @@ int main(int argc, const char * argv[]) {
         const char* hexBackgroundColor = HexFromSDColor(NSColor.systemGrayColor);
         const char* queryFontName = "Menlo";
         const char* queryPromptString = "";
+        InitialQuery = [NSString stringWithUTF8String: ""];
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
         SDReturnStringOnMismatch = NO;
@@ -710,7 +714,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:o:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:q:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -723,6 +727,7 @@ int main(int argc, const char * argv[]) {
                 case 'u': SDUnderlineDisabled = YES; break;
                 case 'm': SDReturnStringOnMismatch = YES; break;
                 case 'p': queryPromptString = optarg; break;
+                case 'q': InitialQuery = [NSString stringWithUTF8String: optarg]; break;
                 case 'o': queryStdout(delegate, optarg); break;
                 case '?':
                 case 'h':
