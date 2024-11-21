@@ -13,6 +13,7 @@ static BOOL SDReturnsIndex;
 static NSFont* SDQueryFont;
 static NSString* PromptText;
 static NSString* InitialQuery;
+static NSString* Separator;
 static int SDNumRows;
 static int SDPercentWidth;
 static BOOL SDUnderlineDisabled;
@@ -644,7 +645,7 @@ static char* HexFromSDColor(NSColor* color) {
     if ([inputStrings length] == 0)
         return nil;
 
-    return [inputStrings componentsSeparatedByString:@"\n"];
+    return [inputStrings componentsSeparatedByString: Separator];
 
 #endif
 
@@ -679,6 +680,10 @@ static void usage(const char* name) {
     printf(" -m           return the query string in case it doesn't match any item\n");
     printf(" -p           defines a prompt to be displayed when query field is empty\n");
     printf(" -q           defines initial query to start with (empty by default)\n");
+    printf(" -x           defines separator string, a single newline (\\n) by default\n");
+    printf("              beware of escaping:\n");
+    printf("                  passing -x \\n\\n will work\n");
+    printf("                  passing -x '\\n\\n' will not work\n");
     printf(" -o           given a query, outputs results to standard output\n");
     exit(0);
 }
@@ -704,6 +709,7 @@ int main(int argc, const char * argv[]) {
         const char* queryFontName = "Menlo";
         const char* queryPromptString = "";
         InitialQuery = [NSString stringWithUTF8String: ""];
+        Separator = [NSString stringWithUTF8String: "\n"];
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
         SDReturnStringOnMismatch = NO;
@@ -714,7 +720,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:q:o:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -728,6 +734,7 @@ int main(int argc, const char * argv[]) {
                 case 'm': SDReturnStringOnMismatch = YES; break;
                 case 'p': queryPromptString = optarg; break;
                 case 'q': InitialQuery = [NSString stringWithUTF8String: optarg]; break;
+                case 'x': Separator = [NSString stringWithUTF8String: optarg]; break;
                 case 'o': queryStdout(delegate, optarg); break;
                 case '?':
                 case 'h':
