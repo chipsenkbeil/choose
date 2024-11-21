@@ -18,6 +18,7 @@ static int SDNumRows;
 static int SDPercentWidth;
 static BOOL SDUnderlineDisabled;
 static BOOL SDReturnStringOnMismatch;
+static BOOL VisualizeWhitespaceCharacters;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -75,7 +76,12 @@ static BOOL SDReturnStringOnMismatch;
         self.raw = str;
         self.normalized = [self.raw lowercaseString];
         self.indexSet = [NSMutableIndexSet indexSet];
-        self.displayString = [[NSMutableAttributedString alloc] initWithString:self.raw attributes:nil];
+
+        NSString* displayStringRaw = self.raw;
+        if (VisualizeWhitespaceCharacters) {
+            displayStringRaw = [[self.raw stringByReplacingOccurrencesOfString:@"\n" withString:@"⏎"] stringByReplacingOccurrencesOfString:@"\t" withString:@"⇥"];
+        }
+        self.displayString = [[NSMutableAttributedString alloc] initWithString:displayStringRaw attributes:nil];
     }
     return self;
 }
@@ -684,6 +690,7 @@ static void usage(const char* name) {
     printf("              beware of escaping:\n");
     printf("                  passing -x \\n\\n will work\n");
     printf("                  passing -x '\\n\\n' will not work\n");
+    printf(" -y           show newline and tab as symbols (⏎ ⇥)\n");
     printf(" -o           given a query, outputs results to standard output\n");
     exit(0);
 }
@@ -702,6 +709,7 @@ int main(int argc, const char * argv[]) {
     @autoreleasepool {
         [NSApp setActivationPolicy: NSApplicationActivationPolicyAccessory];
 
+        VisualizeWhitespaceCharacters = NO;
         SDReturnsIndex = NO;
         SDUnderlineDisabled = NO;
         const char* hexColor = HexFromSDColor(NSColor.systemBlueColor);
@@ -720,7 +728,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvyf:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -735,6 +743,7 @@ int main(int argc, const char * argv[]) {
                 case 'p': queryPromptString = optarg; break;
                 case 'q': InitialQuery = [NSString stringWithUTF8String: optarg]; break;
                 case 'x': Separator = [NSString stringWithUTF8String: optarg]; break;
+                case 'y': VisualizeWhitespaceCharacters = YES; break;
                 case 'o': queryStdout(delegate, optarg); break;
                 case '?':
                 case 'h':
