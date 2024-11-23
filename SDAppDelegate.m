@@ -186,6 +186,8 @@ static BOOL AllowEmptyInput;
 @interface SDAppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate>
 
 // internal
+
+- (void)createMenu;
 @property NSWindow* window;
 @property NSArray* choices;
 @property NSMutableArray* filteredSortedChoices;
@@ -201,7 +203,35 @@ static BOOL AllowEmptyInput;
 /* Starting the app                                                           */
 /******************************************************************************/
 
+-(void)createMenu {
+    /* create invisible menubar so that (copy paste cut undo redo) all work */
+    NSMenu *menubar = [[NSMenu alloc]init];
+    [NSApp setMainMenu:menubar];
+
+    NSMenuItem *menuBarItem = [[NSMenuItem alloc] init];
+    [menubar addItem:menuBarItem];
+    NSMenu *myMenu = [[NSMenu alloc]init];
+
+    // just FYI: some of those are prone to being renamed by the system
+    // see https://github.com/tauri-apps/tauri/issues/7828#issuecomment-1723489849
+    // and https://github.com/electron/electron/blob/706653d5e4d06922f75aa5621533a16fc34d3a77/shell/browser/ui/cocoa/electron_menu_controller.mm#L62
+    NSMenuItem* copyItem = [[NSMenuItem alloc] initWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
+    NSMenuItem* pasteItem = [[NSMenuItem alloc] initWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
+    NSMenuItem* cutItem = [[NSMenuItem alloc] initWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
+    NSMenuItem* undoItem = [[NSMenuItem alloc] initWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"];
+    NSMenuItem* redoItem = [[NSMenuItem alloc] initWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"z"];
+    [redoItem setKeyEquivalentModifierMask: NSShiftKeyMask | NSCommandKeyMask];
+
+    [myMenu addItem:copyItem];
+    [myMenu addItem:pasteItem];
+    [myMenu addItem:cutItem];
+    [myMenu addItem:undoItem];
+    [myMenu addItem:redoItem];
+    [menuBarItem setSubmenu:myMenu];   
+ }
+
 - (void) applicationDidFinishLaunching:(NSNotification *)notification {
+    [self createMenu];
     NSArray* inputItems = [self getInputItems];
 //    NSLog(@"%ld", [inputItems count]);
 //    NSLog(@"%@", inputItems);
