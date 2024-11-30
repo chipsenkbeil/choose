@@ -20,6 +20,8 @@ static BOOL SDUnderlineDisabled;
 static BOOL SDReturnStringOnMismatch;
 static BOOL VisualizeWhitespaceCharacters;
 static BOOL AllowEmptyInput;
+static BOOL MatchFromBeginning;
+static BOOL ScoreFirstMatchedPosition;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -128,25 +130,58 @@ static BOOL AllowEmptyInput;
     self.hasAllCharacters = NO;
 
     [self.indexSet removeAllIndexes];
-
-    NSUInteger lastPos = [self.normalized length] - 1;
     BOOL foundAll = YES;
-    for (NSInteger i = [query length] - 1; i >= 0; i--) {
-        unichar qc = [query characterAtIndex: i];
-        BOOL found = NO;
-        for (NSInteger i = lastPos; i >= 0; i--) {
-            unichar rc = [self.normalized characterAtIndex: i];
-            if (qc == rc) {
-                [self.indexSet addIndex: i];
-                lastPos = i-1;
-                found = YES;
+    __block int firstOccurenceScore = 0;
+
+    if (MatchFromBeginning) {
+        NSUInteger firstPos = 0;
+        for (NSInteger i = 0; i < [query length]; i++) {
+            unichar qc = [query characterAtIndex: i];
+            BOOL found = NO;
+            for (NSInteger i = firstPos; i <= [self.normalized length] - 1; i++) {
+                unichar rc = [self.normalized characterAtIndex: i];
+                if (qc == rc) {
+                    if (firstPos == 0) {
+                        firstOccurenceScore = -i;
+                    }
+                    [self.indexSet addIndex: i];
+                    firstPos = i+1;
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                foundAll = NO;
                 break;
             }
         }
-        if (!found) {
-            foundAll = NO;
-            break;
+    } else {
+        NSUInteger lastPos = [self.normalized length] - 1;
+
+        for (NSInteger i = [query length] - 1; i >= 0; i--) {
+            unichar qc = [query characterAtIndex: i];
+            BOOL found = NO;
+            for (NSInteger i = lastPos; i >= 0; i--) {
+                unichar rc = [self.normalized characterAtIndex: i];
+                if (qc == rc) {
+                    if (lastPos == [self.normalized length] - 1) {
+                        firstOccurenceScore = i - [self.normalized length] + 1;
+                    }
+                    [self.indexSet addIndex: i];
+                    lastPos = i-1;
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                foundAll = NO;
+                break;
+            }
         }
+    }
+
+    if (!ScoreFirstMatchedPosition) {
+        firstOccurenceScore = 0;
     }
 
     self.hasAllCharacters = foundAll;
@@ -174,7 +209,7 @@ static BOOL AllowEmptyInput;
 
     int percentScore = ((double)[self.indexSet count] / (double)[self.normalized length]) * 100.0;
 
-    self.score = lengthScore + percentScore;
+    self.score = lengthScore + percentScore + firstOccurenceScore;
 }
 
 @end
@@ -724,6 +759,8 @@ static void usage(const char* name) {
     printf(" -y           show newline and tab as symbols (⏎ ⇥)\n");
     printf(" -e           allow empty input (choose will show up even if there are no items to select)\n");
     printf(" -o           given a query, outputs results to standard output\n");
+    printf(" -z           search matches symbols from beginning (instead of from end by weird default)\n");
+    printf(" -a           rank early matches higher\n");
     exit(0);
 }
 
@@ -743,6 +780,8 @@ int main(int argc, const char * argv[]) {
 
         VisualizeWhitespaceCharacters = NO;
         AllowEmptyInput = NO;
+        MatchFromBeginning = NO;
+        ScoreFirstMatchedPosition = NO;
         SDReturnsIndex = NO;
         SDUnderlineDisabled = NO;
         const char* hexColor = HexFromSDColor(NSColor.systemBlueColor);
@@ -761,7 +800,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvyef:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -778,6 +817,8 @@ int main(int argc, const char * argv[]) {
                 case 'x': Separator = [NSString stringWithUTF8String: optarg]; break;
                 case 'y': VisualizeWhitespaceCharacters = YES; break;
                 case 'e': AllowEmptyInput = YES; break;
+                case 'z': MatchFromBeginning = YES; break;
+                case 'a': ScoreFirstMatchedPosition = YES; break;
                 case 'o': queryStdout(delegate, optarg); break;
                 case '?':
                 case 'h':
