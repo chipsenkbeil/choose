@@ -12,10 +12,16 @@ static NSColor* SDHighlightBackgroundColor;
 static BOOL SDReturnsIndex;
 static NSFont* SDQueryFont;
 static NSString* PromptText;
+static NSString* InitialQuery;
+static NSString* Separator;
 static int SDNumRows;
 static int SDPercentWidth;
 static BOOL SDUnderlineDisabled;
 static BOOL SDReturnStringOnMismatch;
+static BOOL VisualizeWhitespaceCharacters;
+static BOOL AllowEmptyInput;
+static BOOL MatchFromBeginning;
+static BOOL ScoreFirstMatchedPosition;
 
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
@@ -73,7 +79,12 @@ static BOOL SDReturnStringOnMismatch;
         self.raw = str;
         self.normalized = [self.raw lowercaseString];
         self.indexSet = [NSMutableIndexSet indexSet];
-        self.displayString = [[NSMutableAttributedString alloc] initWithString:self.raw attributes:nil];
+
+        NSString* displayStringRaw = self.raw;
+        if (VisualizeWhitespaceCharacters) {
+            displayStringRaw = [[self.raw stringByReplacingOccurrencesOfString:@"\n" withString:@"⏎"] stringByReplacingOccurrencesOfString:@"\t" withString:@"⇥"];
+        }
+        self.displayString = [[NSMutableAttributedString alloc] initWithString:displayStringRaw attributes:nil];
     }
     return self;
 }
@@ -119,25 +130,58 @@ static BOOL SDReturnStringOnMismatch;
     self.hasAllCharacters = NO;
 
     [self.indexSet removeAllIndexes];
-
-    NSUInteger lastPos = [self.normalized length] - 1;
     BOOL foundAll = YES;
-    for (NSInteger i = [query length] - 1; i >= 0; i--) {
-        unichar qc = [query characterAtIndex: i];
-        BOOL found = NO;
-        for (NSInteger i = lastPos; i >= 0; i--) {
-            unichar rc = [self.normalized characterAtIndex: i];
-            if (qc == rc) {
-                [self.indexSet addIndex: i];
-                lastPos = i-1;
-                found = YES;
+    __block int firstOccurenceScore = 0;
+
+    if (MatchFromBeginning) {
+        NSUInteger firstPos = 0;
+        for (NSInteger i = 0; i < [query length]; i++) {
+            unichar qc = [query characterAtIndex: i];
+            BOOL found = NO;
+            for (NSInteger i = firstPos; i <= [self.normalized length] - 1; i++) {
+                unichar rc = [self.normalized characterAtIndex: i];
+                if (qc == rc) {
+                    if (firstPos == 0) {
+                        firstOccurenceScore = -i;
+                    }
+                    [self.indexSet addIndex: i];
+                    firstPos = i+1;
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                foundAll = NO;
                 break;
             }
         }
-        if (!found) {
-            foundAll = NO;
-            break;
+    } else {
+        NSUInteger lastPos = [self.normalized length] - 1;
+
+        for (NSInteger i = [query length] - 1; i >= 0; i--) {
+            unichar qc = [query characterAtIndex: i];
+            BOOL found = NO;
+            for (NSInteger i = lastPos; i >= 0; i--) {
+                unichar rc = [self.normalized characterAtIndex: i];
+                if (qc == rc) {
+                    if (lastPos == [self.normalized length] - 1) {
+                        firstOccurenceScore = i - [self.normalized length] + 1;
+                    }
+                    [self.indexSet addIndex: i];
+                    lastPos = i-1;
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                foundAll = NO;
+                break;
+            }
         }
+    }
+
+    if (!ScoreFirstMatchedPosition) {
+        firstOccurenceScore = 0;
     }
 
     self.hasAllCharacters = foundAll;
@@ -165,7 +209,7 @@ static BOOL SDReturnStringOnMismatch;
 
     int percentScore = ((double)[self.indexSet count] / (double)[self.normalized length]) * 100.0;
 
-    self.score = lengthScore + percentScore;
+    self.score = lengthScore + percentScore + firstOccurenceScore;
 }
 
 @end
@@ -177,6 +221,8 @@ static BOOL SDReturnStringOnMismatch;
 @interface SDAppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate>
 
 // internal
+
+- (void)createMenu;
 @property NSWindow* window;
 @property NSArray* choices;
 @property NSMutableArray* filteredSortedChoices;
@@ -192,7 +238,35 @@ static BOOL SDReturnStringOnMismatch;
 /* Starting the app                                                           */
 /******************************************************************************/
 
+-(void)createMenu {
+    /* create invisible menubar so that (copy paste cut undo redo) all work */
+    NSMenu *menubar = [[NSMenu alloc]init];
+    [NSApp setMainMenu:menubar];
+
+    NSMenuItem *menuBarItem = [[NSMenuItem alloc] init];
+    [menubar addItem:menuBarItem];
+    NSMenu *myMenu = [[NSMenu alloc]init];
+
+    // just FYI: some of those are prone to being renamed by the system
+    // see https://github.com/tauri-apps/tauri/issues/7828#issuecomment-1723489849
+    // and https://github.com/electron/electron/blob/706653d5e4d06922f75aa5621533a16fc34d3a77/shell/browser/ui/cocoa/electron_menu_controller.mm#L62
+    NSMenuItem* copyItem = [[NSMenuItem alloc] initWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
+    NSMenuItem* pasteItem = [[NSMenuItem alloc] initWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
+    NSMenuItem* cutItem = [[NSMenuItem alloc] initWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
+    NSMenuItem* undoItem = [[NSMenuItem alloc] initWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"];
+    NSMenuItem* redoItem = [[NSMenuItem alloc] initWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"z"];
+    [redoItem setKeyEquivalentModifierMask: NSShiftKeyMask | NSCommandKeyMask];
+
+    [myMenu addItem:copyItem];
+    [myMenu addItem:pasteItem];
+    [myMenu addItem:cutItem];
+    [myMenu addItem:undoItem];
+    [myMenu addItem:redoItem];
+    [menuBarItem setSubmenu:myMenu];   
+ }
+
 - (void) applicationDidFinishLaunching:(NSNotification *)notification {
+    [self createMenu];
     NSArray* inputItems = [self getInputItems];
 //    NSLog(@"%ld", [inputItems count]);
 //    NSLog(@"%@", inputItems);
@@ -211,7 +285,7 @@ static BOOL SDReturnStringOnMismatch;
     [self setupQueryField: textRect];
     [self setupDivider: dividerRect];
     [self setupResultsTable: listRect];
-    [self runQuery: @""];
+    [self runQuery: self.queryField.stringValue];
     [self resizeWindow];
     [self.window center];
     [self.window makeKeyAndOrderFront: nil];
@@ -263,6 +337,7 @@ static BOOL SDReturnStringOnMismatch;
     self.queryField = [[NSTextField alloc] initWithFrame: textRect];
     [self.queryField setAutoresizingMask: NSViewWidthSizable | NSViewMinYMargin ];
     [self.queryField setDelegate: self];
+    [self.queryField setStringValue: InitialQuery];
     [self.queryField setBezelStyle: NSTextFieldSquareBezel];
     [self.queryField setBordered: NO];
     [self.queryField setDrawsBackground: NO];
@@ -639,10 +714,10 @@ static char* HexFromSDColor(NSColor* color) {
     NSData* inputData = [stdinHandle readDataToEndOfFile];
     NSString* inputStrings = [[[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
-    if ([inputStrings length] == 0)
+    if ([inputStrings length] == 0 && !AllowEmptyInput)
         return nil;
 
-    return [inputStrings componentsSeparatedByString:@"\n"];
+    return [inputStrings componentsSeparatedByString: Separator];
 
 #endif
 
@@ -676,7 +751,16 @@ static void usage(const char* name) {
     printf(" -u           disable underline and use background for matched string\n");
     printf(" -m           return the query string in case it doesn't match any item\n");
     printf(" -p           defines a prompt to be displayed when query field is empty\n");
+    printf(" -q           defines initial query to start with (empty by default)\n");
+    printf(" -x           defines separator string, a single newline (\\n) by default\n");
+    printf("              beware of escaping:\n");
+    printf("                  passing -x \\n\\n will work\n");
+    printf("                  passing -x '\\n\\n' will not work\n");
+    printf(" -y           show newline and tab as symbols (⏎ ⇥)\n");
+    printf(" -e           allow empty input (choose will show up even if there are no items to select)\n");
     printf(" -o           given a query, outputs results to standard output\n");
+    printf(" -z           search matches symbols from beginning (instead of from end by weird default)\n");
+    printf(" -a           rank early matches higher\n");
     exit(0);
 }
 
@@ -694,12 +778,18 @@ int main(int argc, const char * argv[]) {
     @autoreleasepool {
         [NSApp setActivationPolicy: NSApplicationActivationPolicyAccessory];
 
+        VisualizeWhitespaceCharacters = NO;
+        AllowEmptyInput = NO;
+        MatchFromBeginning = NO;
+        ScoreFirstMatchedPosition = NO;
         SDReturnsIndex = NO;
         SDUnderlineDisabled = NO;
         const char* hexColor = HexFromSDColor(NSColor.systemBlueColor);
         const char* hexBackgroundColor = HexFromSDColor(NSColor.systemGrayColor);
         const char* queryFontName = "Menlo";
         const char* queryPromptString = "";
+        InitialQuery = [NSString stringWithUTF8String: ""];
+        Separator = [NSString stringWithUTF8String: "\n"];
         CGFloat queryFontSize = 26.0;
         SDNumRows = 10;
         SDReturnStringOnMismatch = NO;
@@ -710,7 +800,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvf:s:r:c:b:n:w:p:o:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -723,6 +813,12 @@ int main(int argc, const char * argv[]) {
                 case 'u': SDUnderlineDisabled = YES; break;
                 case 'm': SDReturnStringOnMismatch = YES; break;
                 case 'p': queryPromptString = optarg; break;
+                case 'q': InitialQuery = [NSString stringWithUTF8String: optarg]; break;
+                case 'x': Separator = [NSString stringWithUTF8String: optarg]; break;
+                case 'y': VisualizeWhitespaceCharacters = YES; break;
+                case 'e': AllowEmptyInput = YES; break;
+                case 'z': MatchFromBeginning = YES; break;
+                case 'a': ScoreFirstMatchedPosition = YES; break;
                 case 'o': queryStdout(delegate, optarg); break;
                 case '?':
                 case 'h':
