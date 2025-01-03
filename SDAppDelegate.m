@@ -681,9 +681,6 @@ static NSString* ScriptAtList;
         [self reflectChoice];
         return YES;
     }
-    /*else if (commandSelector == @selector(moveLeft:) || commandSelector == @selector(moveRight:) || commandSelector == @selector(deleteBackward:)) {
-        [self clearScriptOutputAtInput];
-    }*/
     else if (commandSelector == @selector(insertTab:)) {
         [self.queryField setStringValue: [[self.filteredSortedChoices objectAtIndex: self.choice] raw]];
         [[self.queryField currentEditor] setSelectedRange: NSMakeRange(self.queryField.stringValue.length, 0)];
