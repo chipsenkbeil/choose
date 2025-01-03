@@ -23,6 +23,11 @@ static BOOL AllowEmptyInput;
 static BOOL MatchFromBeginning;
 static BOOL ScoreFirstMatchedPosition;
 
+static NSString* LastQueryString;
+static int LastCursorPos;
+static NSString* ScriptAtInput;
+static NSString* ScriptAtList;
+
 /******************************************************************************/
 /* Boilerplate Subclasses                                                     */
 /******************************************************************************/
@@ -229,6 +234,8 @@ static BOOL ScoreFirstMatchedPosition;
 @property SDTableView* listTableView;
 @property NSTextField* queryField;
 @property NSInteger choice;
+
+@property NSString* lastScriptOutputAtInput;
 
 @end
 
@@ -486,6 +493,47 @@ static BOOL ScoreFirstMatchedPosition;
     [aCell setDrawsBackground:YES];
 }
 
+- (void) runScriptAtList:(NSString*) query {
+    if([ScriptAtList length] > 0){
+	NSArray *rows = [Script(ScriptAtList,query, @"list") componentsSeparatedByString:@"\n"];
+        int i;
+	for (i=[rows count]-1; i>=0; i--){
+            if ([rows[i] length] > 0){
+                SDChoice* newChoice = [[SDChoice alloc] initWithString:rows[i]];
+                [self.filteredSortedChoices insertObject:newChoice atIndex:0];
+            }
+	}
+    }
+}
+
+- (void) runScriptAtInput:(NSString*) query {
+    if([ScriptAtInput length] > 0){
+	self.lastScriptOutputAtInput = Script(ScriptAtInput,query, @"input");
+
+        if([[self.queryField stringValue] length] > [LastQueryString length]){
+            LastQueryString = [self.queryField stringValue];
+            NSString* queryWithOutput = [NSString stringWithFormat:@"%@%@", [self.queryField stringValue], self.lastScriptOutputAtInput];
+            [self.queryField setStringValue: queryWithOutput];
+
+            NSText* fieldEditor = [self.queryField currentEditor];
+            if([self.lastScriptOutputAtInput length] > 0){
+                [fieldEditor setSelectedRange: NSMakeRange([queryWithOutput length]-[self.lastScriptOutputAtInput length],[queryWithOutput length])];
+            }
+        } else if ([[self.queryField stringValue] length] < [LastQueryString length]) {
+            LastQueryString = [self.queryField stringValue];
+        }
+    }
+}
+
+- (void) clearScriptOutputAtInput {
+    NSRange range = [[[self.queryField window] fieldEditor:YES forObject:self.queryField] selectedRange];
+    if([self.lastScriptOutputAtInput length] > 0 && [[[self.queryField stringValue] substringWithRange:range] isEqualToString: self.lastScriptOutputAtInput]){
+        [[[self.queryField window] fieldEditor:YES forObject:self.queryField] setSelectedRange:NSMakeRange(LastCursorPos,0)];
+        [self.queryField setStringValue: [[self.queryField stringValue] substringWithRange:NSMakeRange(0,range.location)]];
+        self.lastScriptOutputAtInput = @"";
+    }
+}
+
 /******************************************************************************/
 /* Filtering!                                                                 */
 /******************************************************************************/
@@ -524,6 +572,11 @@ static BOOL ScoreFirstMatchedPosition;
     // render remainder
     for (SDChoice* choice in self.filteredSortedChoices)
         [choice render];
+
+    // running scripts on input, if available
+    LastCursorPos = (int) [[[self.queryField window] fieldEditor:YES forObject:self.queryField] selectedRange].location;
+    [self runScriptAtInput: query];
+    [self runScriptAtList: query];
 
     // show!
     [self.listTableView reloadData];
@@ -597,6 +650,7 @@ static BOOL ScoreFirstMatchedPosition;
 /******************************************************************************/
 
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector {
+    [self clearScriptOutputAtInput];
     if (commandSelector == @selector(cancelOperation:)) {
         if ([[self.queryField stringValue] length] > 0) {
             [textView moveToBeginningOfDocument: nil];
@@ -627,6 +681,9 @@ static BOOL ScoreFirstMatchedPosition;
         [self reflectChoice];
         return YES;
     }
+    /*else if (commandSelector == @selector(moveLeft:) || commandSelector == @selector(moveRight:) || commandSelector == @selector(deleteBackward:)) {
+        [self clearScriptOutputAtInput];
+    }*/
     else if (commandSelector == @selector(insertTab:)) {
         [self.queryField setStringValue: [[self.filteredSortedChoices objectAtIndex: self.choice] raw]];
         [[self.queryField currentEditor] setSelectedRange: NSMakeRange(self.queryField.stringValue.length, 0)];
@@ -642,6 +699,7 @@ static BOOL ScoreFirstMatchedPosition;
 }
 
 - (void) controlTextDidChange:(NSNotification *)obj {
+    [self clearScriptOutputAtInput];
     [self runQuery: [self.queryField stringValue]];
 }
 
@@ -698,6 +756,29 @@ static char* HexFromSDColor(NSColor* color) {
     return buffer;
 }
 
+static NSString* Script(NSString* pathToScript, NSString* queryInput, NSString* where) {
+    int pid = [[NSProcessInfo processInfo] processIdentifier];
+    NSPipe *pipe = [NSPipe pipe];
+    NSPipe *pipeErr = [NSPipe pipe];
+    NSFileHandle *file = pipe.fileHandleForReading;
+
+    NSTask *task = [[NSTask alloc] init];
+    task.launchPath = pathToScript;
+    task.arguments = @[queryInput, where];
+    task.standardOutput = pipe;
+    task.standardError = pipeErr;
+
+    [task launch];
+    
+    NSData *data = [file readDataToEndOfFile];
+    [file closeFile];
+    
+    NSString *output = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+
+    return output;
+}
+
+
 /******************************************************************************/
 /* Getting input list                                                         */
 /******************************************************************************/
@@ -752,6 +833,10 @@ static void usage(const char* name) {
     printf(" -m           return the query string in case it doesn't match any item\n");
     printf(" -p           defines a prompt to be displayed when query field is empty\n");
     printf(" -q           defines initial query to start with (empty by default)\n");
+    printf(" -r           path to a script to run when typing. Output appended to input field. Two args provided upon run:\n");
+    printf("               - the query text from input field\n");
+    printf("               - where output will be placed (\"input\" for -r or \"list\" for -t). \n");
+    printf(" -t           same as -r, but outputs are in the form of extra list options (supports multiline outputs)\n");
     printf(" -x           defines separator string, a single newline (\\n) by default\n");
     printf("              beware of escaping:\n");
     printf("                  passing -x \\n\\n will work\n");
@@ -800,7 +885,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:x:o:hium")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:r:t:x:o:hium")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -814,6 +899,8 @@ int main(int argc, const char * argv[]) {
                 case 'm': SDReturnStringOnMismatch = YES; break;
                 case 'p': queryPromptString = optarg; break;
                 case 'q': InitialQuery = [NSString stringWithUTF8String: optarg]; break;
+                case 'r': ScriptAtInput = [NSString stringWithUTF8String: optarg]; break;
+                case 't': ScriptAtList = [NSString stringWithUTF8String: optarg]; break;
                 case 'x': Separator = [NSString stringWithUTF8String: optarg]; break;
                 case 'y': VisualizeWhitespaceCharacters = YES; break;
                 case 'e': AllowEmptyInput = YES; break;
@@ -833,6 +920,15 @@ int main(int argc, const char * argv[]) {
         SDHighlightColor = SDColorFromHex([NSString stringWithUTF8String: hexColor]);
         SDHighlightBackgroundColor = SDColorFromHex([NSString stringWithUTF8String: hexBackgroundColor]);
         PromptText = [NSString stringWithUTF8String: queryPromptString];
+
+        if ([ScriptAtInput length] > 0 && ![[NSFileManager defaultManager] fileExistsAtPath:ScriptAtInput]){
+            printf("No such file or directory for the script at input: %s\n", [ScriptAtInput UTF8String]);
+            exit(1);
+        }
+        if ([ScriptAtList length] > 0 && ![[NSFileManager defaultManager] fileExistsAtPath:ScriptAtList]){
+            printf("No such file or directory for the script at list: %s\n", [ScriptAtList UTF8String]);
+            exit(1);
+        }
 
         NSApplicationMain(argc, argv);
     }
