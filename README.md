@@ -63,6 +63,22 @@ ls /Applications/ /Applications/Utilities/ /System/Applications/ /System/Applica
     xargs -I {} open -a "{}.app"
 ```
 
+### Query Passwords from password-store
+
+Assuming that your [passwordstore](https://www.passwordstore.org/) directory
+is `$HOME/.password-store`, the following will find a list of all the files
+containing passwords (using extension `.gpg`), strip off the pathing so you have
+something like `Personal/Coding/github.com`, present them as options using
+`choose`, and then if an option is selected this will run `pass show -c OPTION`
+to put the password into your clipboard.
+
+```bash
+find $HOME/.password-store -type f -name '*.gpg' | \
+    sed "s|.*/\.password-store/||; s|\.gpg$||" | \
+    choose | \
+    xargs -r -I{} pass show -c {}
+```
+
 ### Use as a snippet manager
 
 Suppose you have some snippets in a text file and you want to quickly search and
