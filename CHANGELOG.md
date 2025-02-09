@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-02-08
+
+* Support running shell scripts when typing queries (#53)
+
 ## [1.4.1] - 2025-01-01
 
 * Fix published binary to reflect `1.4.x` instead of `1.3.x`
@@ -55,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * This is the initial release
 
-[Unreleased]: https://github.com/chipsenkbeil/choose/compare/1.4.1...HEAD
+[Unreleased]: https://github.com/chipsenkbeil/choose/compare/1.5.0...HEAD
+[1.5.0]: https://github.com/chipsenkbeil/choose/compare/1.4.1...1.5.0
 [1.4.1]: https://github.com/chipsenkbeil/choose/compare/1.4.0...1.4.1
 [1.4.0]: https://github.com/chipsenkbeil/choose/compare/1.3.1...1.4.0
 [1.3.1]: https://github.com/chipsenkbeil/choose/compare/1.3.0...1.3.1
