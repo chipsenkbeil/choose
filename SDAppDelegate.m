@@ -465,6 +465,24 @@ static CaseSpecification SearchCase;
     [self.window setFrame:winRect display:YES];
 }
 
+- (void) moveSelectionUp {
+    if (self.choice <= 0) {
+        self.choice = [self.filteredSortedChoices count] - 1;
+    } else {
+        self.choice -= 1;
+    }
+    [self reflectChoice];
+}
+
+- (void) moveSelectionDown {
+    if (self.choice >= [self.filteredSortedChoices count] - 1) {
+        self.choice = 0;
+    } else {
+        self.choice += 1;
+    }
+    [self reflectChoice];
+}
+
 - (void) setupKeyboardShortcuts {
     __weak id _self = self;
     [self addShortcut:@"1" mods:NSCommandKeyMask handler:^{ [_self pickIndex: 0]; }];
@@ -480,6 +498,9 @@ static CaseSpecification SearchCase;
     [self addShortcut:@"a" mods:NSCommandKeyMask handler:^{ [_self selectAll: nil]; }];
     [self addShortcut:@"c" mods:NSControlKeyMask handler:^{ [_self cancel]; }];
     [self addShortcut:@"g" mods:NSControlKeyMask handler:^{ [_self cancel]; }];
+    // Vim-style navigation: Ctrl+j (down), Ctrl+k (up)
+    [self addShortcut:@"j" mods:NSControlKeyMask handler:^{ [_self moveSelectionDown]; }];
+    [self addShortcut:@"k" mods:NSControlKeyMask handler:^{ [_self moveSelectionUp]; }];
 }
 
 /******************************************************************************/
