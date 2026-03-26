@@ -27,6 +27,9 @@ static BOOL MatchWords;
 static BOOL SortMatches;
 static BOOL Password;
 
+static NSString* SDCustomKeys[19] = {nil};
+static NSEventModifierFlags SDCustomKeyMods[19] = {0};
+
 static NSString* LastQueryString;
 static int LastCursorPos;
 static NSString* ScriptAtInput;
@@ -239,6 +242,7 @@ static CaseSpecification SearchCase;
 // internal
 
 - (void)createMenu;
+- (void)customKeyPress:(int)num;
 @property NSWindow* window;
 @property NSArray* choices;
 @property NSMutableArray* filteredSortedChoices;
@@ -247,6 +251,7 @@ static CaseSpecification SearchCase;
 @property NSInteger choice;
 
 @property NSString* lastScriptOutputAtInput;
+@property int customExitCode;
 
 @end
 
@@ -501,11 +506,23 @@ static CaseSpecification SearchCase;
     // Vim-style navigation: Ctrl+j (down), Ctrl+k (up)
     [self addShortcut:@"j" mods:NSControlKeyMask handler:^{ [_self moveSelectionDown]; }];
     [self addShortcut:@"k" mods:NSControlKeyMask handler:^{ [_self moveSelectionUp]; }];
+    
+    // Custom key bindings
+    for (int i = 0; i < 19; i++) {
+        if (SDCustomKeys[i]) {
+            [self addShortcut:SDCustomKeys[i] mods:SDCustomKeyMods[i] handler:^{ [_self customKeyPress:i+1]; }];
+        }
+    }
 }
 
 /******************************************************************************/
 /* Table view                                                                 */
 /******************************************************************************/
+
+- (void)customKeyPress:(int)num {
+    self.customExitCode = 10 + (num - 1); // kb-custom-1 -> exit 10, kb-custom-2 -> 11, etc.
+    [self choose];
+}
 
 - (void) reflectChoice {
     [self.listTableView selectRowIndexes:[NSIndexSet indexSetWithIndex: self.choice] byExtendingSelection:NO];
@@ -765,12 +782,15 @@ static CaseSpecification SearchCase;
 /******************************************************************************/
 
 - (void) choose {
+    int exitCode = self.customExitCode;
+    self.customExitCode = 0;
+    
     if ([self.filteredSortedChoices count] == 0) {
         if (SDReturnStringOnMismatch) {
             [self writeOutput: [self.queryField stringValue]];
-            exit(0);
+            exit(exitCode != 0 ? exitCode : 0);
         }
-        exit(1);
+        exit(exitCode != 0 ? exitCode : 1);
     }
 
     if (SDReturnsIndex) {
@@ -783,7 +803,7 @@ static CaseSpecification SearchCase;
         [self writeOutput: choice.raw];
     }
 
-    exit(0);
+    exit(exitCode != 0 ? exitCode : 0);
 }
 
 - (void) cancel {
@@ -981,6 +1001,32 @@ static NSString* Script(NSString* pathToScript, NSString* queryInput, NSString* 
 /* Command line interface                                                     */
 /******************************************************************************/
 
+static void parseKeySpec(NSString* spec, NSString** key, NSEventModifierFlags* mods) {
+    // Initialize outputs
+    *key = nil;
+    *mods = 0;
+    
+    NSArray* components = [spec componentsSeparatedByString:@"+"];
+    if ([components count] == 0) return;
+    
+    // Last component is the key
+    *key = [components lastObject];
+    
+    // Process modifiers (all but the last)
+    for (NSUInteger i = 0; i < [components count] - 1; i++) {
+        NSString* mod = [components[i] lowercaseString];
+        if ([mod isEqualToString:@"control"]) {
+            *mods |= NSControlKeyMask;
+        } else if ([mod isEqualToString:@"command"]) {
+            *mods |= NSCommandKeyMask;
+        } else if ([mod isEqualToString:@"option"] || [mod isEqualToString:@"alt"]) {
+            *mods |= NSAlternateKeyMask;
+        } else if ([mod isEqualToString:@"shift"]) {
+            *mods |= NSShiftKeyMask;
+        }
+    }
+}
+
 static NSString* SDAppVersionString(void) {
     return [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
 }
@@ -1022,6 +1068,8 @@ static void usage(const char* name) {
     printf(" -W           match words (rather than characters) from the query field\n");
     printf(" -S           do not sort matches (ie, present them in the same order they appeared in the input)\n");
     printf(" -C [i]       i = case-insensitive, I = case-sensitive, s = smart (case-sensitive if query contains uppercase characters, case-insensitive otherwise)\n");
+    printf(" -K [n:spec]  define custom keybinding n (1-19) with key spec (e.g., 1:Control+7)\n");
+    printf("              When pressed, choose exits with code 9+n (10 for n=1, 11 for n=2, ... up to 28 for n=19)\n");
     exit(0);
 }
 
@@ -1086,7 +1134,7 @@ int main(int argc, const char * argv[]) {
         [NSApp setDelegate: delegate];
 
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:r:t:x:o:Phium1WSC:")) != -1) {
+        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:r:t:x:o:Phium1WSC:K:")) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
@@ -1113,6 +1161,30 @@ int main(int argc, const char * argv[]) {
                 case 'W': MatchWords = YES; break;
                 case 'S': SortMatches = NO; break;
                 case 'C': SearchCase = getSearchCase(optarg, argv[0]); break;
+                case 'K': {
+                    NSString* optStr = [NSString stringWithUTF8String: optarg];
+                    NSArray* parts = [optStr componentsSeparatedByString:@":"];
+                    if ([parts count] != 2) {
+                        fprintf(stderr, "Invalid custom key spec: %s\n", optarg);
+                        exit(1);
+                    }
+                    int num = [parts[0] intValue];
+                    if (num < 1 || num > 19) {
+                        fprintf(stderr, "Custom key number must be between 1 and 19\n");
+                        exit(1);
+                    }
+                    NSString* keySpec = parts[1];
+                    NSString* key = nil;
+                    NSEventModifierFlags mods = 0;
+                    parseKeySpec(keySpec, &key, &mods);
+                    if (!key) {
+                        fprintf(stderr, "Invalid key specification: %s\n", [keySpec UTF8String]);
+                        exit(1);
+                    }
+                    SDCustomKeys[num-1] = key;
+                    SDCustomKeyMods[num-1] = mods;
+                    break;
+                }
                 case '?':
                 case 'h':
                 default:
