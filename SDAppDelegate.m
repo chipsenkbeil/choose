@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <CommonCrypto/CommonDigest.h>
+#include <getopt.h>
 
 #define NSApp [NSApplication sharedApplication]
 
@@ -7,8 +8,14 @@
 /* User Options                                                               */
 /******************************************************************************/
 
+static NSColor* SDBackgroundColor;
+static NSColor* SDTextColor;
 static NSColor* SDHighlightColor;
-static NSColor* SDHighlightBackgroundColor;
+static NSColor* SDSelectedBackgroundColor;
+static NSColor* SDQueryColor;
+static NSColor* SDPlaceholderColor;
+static NSColor* SDIconColor;
+static NSColor* SDDividerColor;
 static BOOL SDReturnsIndex;
 static NSFont* SDQueryFont;
 static NSString* PromptText;
@@ -117,7 +124,7 @@ static CaseSpecification SearchCase;
     NSUInteger len = [self.raw length];
     NSRange fullRange = NSMakeRange(0, len);
 
-    [self.displayString removeAttribute:NSForegroundColorAttributeName range:fullRange];
+    [self.displayString addAttribute:NSForegroundColorAttributeName value:SDTextColor range:fullRange];
 
     if (SDUnderlineDisabled) {
         [self.displayString removeAttribute:NSBackgroundColorAttributeName range:fullRange];
@@ -329,11 +336,15 @@ static CaseSpecification SearchCase;
 
     if (usingYosemite) {
         self.window.titlebarAppearsTransparent = YES;
-        NSVisualEffectView* blur = [[NSVisualEffectView alloc] initWithFrame: [[self.window contentView] bounds]];
-        [blur setAutoresizingMask: NSViewWidthSizable | NSViewHeightSizable ];
-        blur.material = NSVisualEffectMaterialMenu;
-        blur.state = NSVisualEffectBlendingModeBehindWindow;
-        [[self.window contentView] addSubview: blur];
+        if (SDBackgroundColor != nil) {
+            self.window.backgroundColor = SDBackgroundColor;
+        } else {
+            NSVisualEffectView* blur = [[NSVisualEffectView alloc] initWithFrame: [[self.window contentView] bounds]];
+            [blur setAutoresizingMask: NSViewWidthSizable | NSViewHeightSizable ];
+            blur.material = NSVisualEffectMaterialMenu;
+            blur.state = NSVisualEffectBlendingModeBehindWindow;
+            [[self.window contentView] addSubview: blur];
+        }
     }
 }
 
@@ -351,6 +362,7 @@ static CaseSpecification SearchCase;
     iconRect = NSInsetRect(iconRect, d, d);
 
     NSImageView* icon = [[NSImageView alloc] initWithFrame: iconRect];
+    if (@available(macOS 10.14, *)) icon.contentTintColor = SDIconColor;
     [icon setAutoresizingMask: NSViewMaxXMargin | NSViewMinYMargin ];
     [icon setImage: [NSImage imageNamed:  NSImageNameRightFacingTriangleTemplate]];
     [icon setImageScaling: NSImageScaleProportionallyDown];
@@ -367,7 +379,11 @@ static CaseSpecification SearchCase;
     [self.queryField setFocusRingType: NSFocusRingTypeNone];
     [self.queryField setFont: SDQueryFont];
     [self.queryField setEditable: YES];
-    [self.queryField setPlaceholderString: PromptText];
+    [self.queryField setTextColor: SDQueryColor];
+    NSDictionary* placeholderAttributes = @{ NSFontAttributeName: self.queryField.font, NSForegroundColorAttributeName: SDPlaceholderColor };
+    NSAttributedString* placeholderAttrString = [[NSAttributedString alloc] initWithString:PromptText
+                                                                                attributes:placeholderAttributes];
+    [self.queryField setPlaceholderAttributedString: placeholderAttrString];
     [self.queryField setTarget: self];
     [self.queryField setAction: @selector(choose:)];
     [[self.queryField cell] setSendsActionOnEndEditing: NO];
@@ -391,7 +407,7 @@ static CaseSpecification SearchCase;
     NSBox* border = [[NSBox alloc] initWithFrame: dividerRect];
     [border setAutoresizingMask: NSViewWidthSizable | NSViewMinYMargin ];
     [border setBoxType: NSBoxCustom];
-    [border setFillColor: [NSColor systemGrayColor]];
+    [border setFillColor: SDDividerColor];
     [border setBorderWidth: 0.0];
     [[self.window contentView] addSubview: border];
 }
@@ -527,7 +543,7 @@ static CaseSpecification SearchCase;
 
 - (void) tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex {
     if ([[aTableView selectedRowIndexes] containsIndex:rowIndex])
-        [aCell setBackgroundColor: [SDHighlightBackgroundColor colorWithAlphaComponent: 0.5]];
+        [aCell setBackgroundColor: [SDSelectedBackgroundColor colorWithAlphaComponent:0.5]];
     else
         [aCell setBackgroundColor: [NSColor clearColor]];
 
@@ -907,24 +923,21 @@ static CaseSpecification SearchCase;
 }
 
 static NSColor* SDColorFromHex(NSString* hex) {
-    NSScanner* scanner = [NSScanner scannerWithString: [hex uppercaseString]];
+    NSString* upperHex = [hex uppercaseString];
+    NSScanner* scanner = [NSScanner scannerWithString: upperHex];
     unsigned colorCode = 0;
     [scanner scanHexInt: &colorCode];
+
+    // if alpha is not provided, assume it's 0xff
+    BOOL has0x = [upperHex hasPrefix: @"0X"];
+    if ((has0x && upperHex.length <= 8) || (!has0x && upperHex.length <= 6)) {
+        colorCode |= 0xff000000;
+    }
+
     return [NSColor colorWithCalibratedRed:(CGFloat)(unsigned char)(colorCode >> 16) / 0xff
                                      green:(CGFloat)(unsigned char)(colorCode >> 8) / 0xff
                                       blue:(CGFloat)(unsigned char)(colorCode) / 0xff
-                                     alpha: 1.0];
-}
-
-static char* HexFromSDColor(NSColor* color) {
-    size_t bufferSize = 7;
-    char* buffer = (char*) malloc(bufferSize * sizeof(char));
-    NSColor* c = [color colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-    snprintf(buffer, bufferSize, "%2X%2X%2X",
-            (unsigned int) ([c redComponent] * 255.99999),
-            (unsigned int) ([c greenComponent] * 255.99999),
-            (unsigned int) ([c blueComponent] * 255.99999));
-    return buffer;
+                                     alpha:(CGFloat)(unsigned char)(colorCode >> 24) / 0xff];
 }
 
 static NSString* Script(NSString* pathToScript, NSString* queryInput, NSString* where) {
@@ -998,8 +1011,14 @@ static void usage(const char* name) {
     printf(" -w [50]      set width of choose window\n");
     printf(" -f [Menlo]   set font used by choose\n");
     printf(" -s [26]      set font size used by choose\n");
-    printf(" -c [0000FF]  highlight color for matched string\n");
-    printf(" -b [222222]  background color of selected element\n");
+    printf(" --highlight-color, -c   [0xAA]RRGGBB   highlight color for matched string\n");
+    printf(" --selected-bg-color, -b [0xAA]RRGGBB   background color of selected element\n");
+    printf(" --text-color            [0xAA]RRGGBB   list text color\n");
+    printf(" --query-color           [0xAA]RRGGBB   text color of query input\n");
+    printf(" --placeholder-color     [0xAA]RRGGBB   placeholder text color (see -p)\n");
+    printf(" --icon-color            [0xAA]RRGGBB   prompt icon color\n");
+    printf(" --divider-color         [0xAA]RRGGBB   color for divider between prompt and list\n");
+    printf(" --background-color      [0xAA]RRGGBB   window background color\n");
     printf(" -u           disable underline and use background for matched string\n");
     printf(" -m           return the query string in case it doesn't match any item\n");
     printf(" -p           defines a prompt to be displayed when query field is empty\n");
@@ -1065,8 +1084,13 @@ int main(int argc, const char * argv[]) {
         ScoreFirstMatchedPosition = NO;
         SDReturnsIndex = NO;
         SDUnderlineDisabled = NO;
-        const char* hexColor = HexFromSDColor(NSColor.systemBlueColor);
-        const char* hexBackgroundColor = HexFromSDColor(NSColor.systemGrayColor);
+        SDTextColor = NSColor.controlTextColor;
+        SDHighlightColor = NSColor.systemBlueColor;
+        SDSelectedBackgroundColor = NSColor.systemGrayColor;
+        SDQueryColor = NSColor.controlTextColor;
+        SDPlaceholderColor = NSColor.placeholderTextColor;
+        SDIconColor = NSColor.systemGrayColor;
+        SDDividerColor = NSColor.systemGrayColor;
         const char* queryFontName = "Menlo";
         const char* queryPromptString = "";
         InitialQuery = [NSString stringWithUTF8String: ""];
@@ -1085,13 +1109,42 @@ int main(int argc, const char * argv[]) {
         delegate = [[SDAppDelegate alloc] init];
         [NSApp setDelegate: delegate];
 
+        enum {
+            OPT_HIGHLIGHT_COLOR = 'c',
+            OPT_SELECTED_BG_COLOR = 'b',
+            OPT_TEXT_COLOR = 1000,
+            OPT_QUERY_COLOR,
+            OPT_PLACEHOLDER_COLOR,
+            OPT_ICON_COLOR,
+            OPT_DIVIDER_COLOR,
+            OPT_BACKGROUND_COLOR,
+        };
+
+        static struct option longopts[] = {
+            {"text-color",        required_argument, 0, OPT_TEXT_COLOR},
+            {"highlight-color",   required_argument, 0, OPT_HIGHLIGHT_COLOR},
+            {"selected-bg-color", required_argument, 0, OPT_SELECTED_BG_COLOR},
+            {"query-color",       required_argument, 0, OPT_QUERY_COLOR},
+            {"placeholder-color", required_argument, 0, OPT_PLACEHOLDER_COLOR},
+            {"icon-color",        required_argument, 0, OPT_ICON_COLOR},
+            {"divider-color",     required_argument, 0, OPT_DIVIDER_COLOR},
+            {"background-color",  required_argument, 0, OPT_BACKGROUND_COLOR},
+            {0, 0, 0, 0}
+        };
+
         int ch;
-        while ((ch = getopt(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:r:t:x:o:Phium1WSC:")) != -1) {
+        while ((ch = getopt_long(argc, (char**)argv, "lvyezaf:s:r:c:b:n:w:p:q:r:t:x:o:Phium1WSC:", longopts, NULL)) != -1) {
             switch (ch) {
                 case 'i': SDReturnsIndex = YES; break;
                 case 'f': queryFontName = optarg; break;
-                case 'c': hexColor = optarg; break;
-                case 'b': hexBackgroundColor = optarg; break;
+                case OPT_BACKGROUND_COLOR: SDBackgroundColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_TEXT_COLOR: SDTextColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_HIGHLIGHT_COLOR: SDHighlightColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_SELECTED_BG_COLOR: SDSelectedBackgroundColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_QUERY_COLOR: SDQueryColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_PLACEHOLDER_COLOR: SDPlaceholderColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_ICON_COLOR: SDIconColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
+                case OPT_DIVIDER_COLOR: SDDividerColor = SDColorFromHex([NSString stringWithUTF8String: optarg]); break;
                 case 's': queryFontSize = atoi(optarg); break;
                 case 'n': SDNumRows = atoi(optarg); break;
                 case 'w': SDPercentWidth = atoi(optarg); break;
@@ -1123,8 +1176,6 @@ int main(int argc, const char * argv[]) {
         argv += optind;
 
         SDQueryFont = [NSFont fontWithName:[NSString stringWithUTF8String: queryFontName] size:queryFontSize];
-        SDHighlightColor = SDColorFromHex([NSString stringWithUTF8String: hexColor]);
-        SDHighlightBackgroundColor = SDColorFromHex([NSString stringWithUTF8String: hexBackgroundColor]);
         PromptText = [NSString stringWithUTF8String: queryPromptString];
 
         if ([ScriptAtInput length] > 0 && ![[NSFileManager defaultManager] fileExistsAtPath:ScriptAtInput]){
@@ -1140,4 +1191,3 @@ int main(int argc, const char * argv[]) {
     }
     return 0;
 }
-
